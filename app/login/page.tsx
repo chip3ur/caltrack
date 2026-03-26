@@ -10,6 +10,20 @@ export default function LoginPage() {
   const [isSignup, setIsSignup] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+
+  async function handleForgot() {
+    if (!email) { setError('Entrez votre email.'); return }
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) setError(error.message)
+    else setForgotSent(true)
+    setLoading(false)
+  }
 
   async function handleSubmit() {
     setLoading(true)
@@ -35,28 +49,64 @@ export default function LoginPage() {
         <h1 className="text-2xl text-white mb-1">CalTrack</h1>
         <p className="text-sm text-gray-500 mb-6">nutrition · performance · résultats</p>
 
-        <div className="flex gap-2 mb-6">
-          <button onClick={() => setIsSignup(false)}
-            className={`flex-1 py-2 rounded-lg text-sm ${!isSignup ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-gray-500'}`}>
-            Connexion
-          </button>
-          <button onClick={() => setIsSignup(true)}
-            className={`flex-1 py-2 rounded-lg text-sm ${isSignup ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-gray-500'}`}>
-            Inscription
-          </button>
-        </div>
+        {forgotMode ? (
+          forgotSent ? (
+            <div className="text-center">
+              <p className="text-green-400 text-sm mb-4">Lien envoyé ! Vérifiez votre boîte mail.</p>
+              <button onClick={() => { setForgotMode(false); setForgotSent(false) }}
+                className="text-blue-400 text-sm hover:underline">
+                Retour à la connexion
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-400 mb-4">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm mb-4 outline-none" />
+              {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+              <button onClick={handleForgot} disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-medium mb-3">
+                {loading ? 'Envoi...' : 'Envoyer le lien'}
+              </button>
+              <button onClick={() => { setForgotMode(false); setError('') }}
+                className="w-full text-gray-500 text-sm hover:text-gray-300">
+                Annuler
+              </button>
+            </>
+          )
+        ) : (
+          <>
+            <div className="flex gap-2 mb-6">
+              <button onClick={() => setIsSignup(false)}
+                className={`flex-1 py-2 rounded-lg text-sm ${!isSignup ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-gray-500'}`}>
+                Connexion
+              </button>
+              <button onClick={() => setIsSignup(true)}
+                className={`flex-1 py-2 rounded-lg text-sm ${isSignup ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-gray-500'}`}>
+                Inscription
+              </button>
+            </div>
 
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
-          className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm mb-3 outline-none" />
-        <input type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)}
-          className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm mb-4 outline-none" />
+            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
+              className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm mb-3 outline-none" />
+            <input type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)}
+              className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm mb-2 outline-none" />
 
-        {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+            {!isSignup && (
+              <button onClick={() => { setForgotMode(true); setError('') }}
+                className="text-xs text-gray-500 hover:text-blue-400 mb-4 block text-right w-full">
+                Mot de passe oublié ?
+              </button>
+            )}
 
-        <button onClick={handleSubmit} disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-medium">
-          {loading ? 'Chargement...' : isSignup ? 'Créer mon compte' : 'Se connecter'}
-        </button>
+            {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+
+            <button onClick={handleSubmit} disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-medium mt-2">
+              {loading ? 'Chargement...' : isSignup ? 'Créer mon compte' : 'Se connecter'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

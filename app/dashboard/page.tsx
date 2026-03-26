@@ -28,7 +28,8 @@ export default function DashboardPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const today = new Date().toISOString().split('T')[0]
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
       const [{ data: profileData }, { data: mealsData }] = await Promise.all([
         supabase.from('profiles').select('daily_calories, full_name').eq('id', session.user.id).single(),

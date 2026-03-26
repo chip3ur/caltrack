@@ -23,6 +23,9 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
   const [openDay, setOpenDay] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<{ food_name: string; calories: string; quantity_g: string; meal_type: string }>({ food_name: '', calories: '', quantity_g: '', meal_type: 'dejeuner' })
+  const [saving, setSaving] = useState(false)
   const [dailyGoal, setDailyGoal] = useState(2000)
 
   useEffect(() => {
@@ -78,6 +81,29 @@ export default function HistoryPage() {
     await supabase.from('meals').delete().eq('id', id)
     await load()
     setDeleting(null)
+  }
+
+  function startEdit(meal: Meal) {
+    setEditing(meal.id)
+    setEditValues({
+      food_name: meal.food_name,
+      calories: String(meal.calories),
+      quantity_g: String(meal.quantity_g),
+      meal_type: meal.meal_type,
+    })
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true)
+    await supabase.from('meals').update({
+      food_name: editValues.food_name,
+      calories: Number(editValues.calories),
+      quantity_g: Number(editValues.quantity_g),
+      meal_type: editValues.meal_type,
+    }).eq('id', id)
+    setEditing(null)
+    await load()
+    setSaving(false)
   }
 
   function statusTag(total: number) {
@@ -152,23 +178,83 @@ export default function HistoryPage() {
                           </p>
                         </div>
                         {meals.map(meal => (
-                          <div key={meal.id} className="flex items-center justify-between py-2 border-b border-[#22222E] last:border-none group">
-                            <div>
-                              <p className="text-sm text-white">{meal.food_name}</p>
-                              {meal.quantity_g > 0 && (
-                                <p className="text-xs text-gray-600">{meal.quantity_g}g</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm text-yellow-500">{meal.calories} kcal</span>
-                              <button
-                                onClick={() => deleteMeal(meal.id)}
-                                disabled={deleting === meal.id}
-                                className="text-xs text-red-400 opacity-0 group-hover:opacity-100 hover:underline transition-opacity disabled:opacity-50"
-                              >
-                                {deleting === meal.id ? '...' : 'Supprimer'}
-                              </button>
-                            </div>
+                          <div key={meal.id} className="border-b border-[#22222E] last:border-none">
+                            {editing === meal.id ? (
+                              <div className="py-3 space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input
+                                    value={editValues.food_name}
+                                    onChange={e => setEditValues(v => ({ ...v, food_name: e.target.value }))}
+                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none col-span-2"
+                                    placeholder="Nom"
+                                  />
+                                  <input
+                                    type="number"
+                                    value={editValues.calories}
+                                    onChange={e => setEditValues(v => ({ ...v, calories: e.target.value }))}
+                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                    placeholder="Calories"
+                                  />
+                                  <input
+                                    type="number"
+                                    value={editValues.quantity_g}
+                                    onChange={e => setEditValues(v => ({ ...v, quantity_g: e.target.value }))}
+                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                    placeholder="Quantité (g)"
+                                  />
+                                  <select
+                                    value={editValues.meal_type}
+                                    onChange={e => setEditValues(v => ({ ...v, meal_type: e.target.value }))}
+                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none col-span-2"
+                                  >
+                                    <option value="petit-dejeuner">Petit-déjeuner</option>
+                                    <option value="dejeuner">Déjeuner</option>
+                                    <option value="gouter">Goûter</option>
+                                    <option value="diner">Dîner</option>
+                                  </select>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => saveEdit(meal.id)}
+                                    disabled={saving}
+                                    className="text-xs bg-blue-600/20 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-lg hover:bg-blue-600/30 disabled:opacity-50"
+                                  >
+                                    {saving ? '...' : 'Sauvegarder'}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditing(null)}
+                                    className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5"
+                                  >
+                                    Annuler
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between py-2 group">
+                                <div>
+                                  <p className="text-sm text-white">{meal.food_name}</p>
+                                  {meal.quantity_g > 0 && (
+                                    <p className="text-xs text-gray-600">{meal.quantity_g}g</p>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-yellow-500">{meal.calories} kcal</span>
+                                  <button
+                                    onClick={() => startEdit(meal)}
+                                    className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 hover:underline transition-opacity"
+                                  >
+                                    Modifier
+                                  </button>
+                                  <button
+                                    onClick={() => deleteMeal(meal.id)}
+                                    disabled={deleting === meal.id}
+                                    className="text-xs text-red-400 opacity-0 group-hover:opacity-100 hover:underline transition-opacity disabled:opacity-50"
+                                  >
+                                    {deleting === meal.id ? '...' : 'Supprimer'}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

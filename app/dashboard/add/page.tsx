@@ -25,7 +25,8 @@ function TodayMeals({ refresh }: { refresh: number }) {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const today = new Date().toISOString().split('T')[0]
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       const { data } = await supabase
         .from('meals')
         .select('id, food_name, calories, meal_type')
@@ -112,6 +113,7 @@ export default function AddMealPage() {
       quantity_g: qty,
       calories: cal,
       meal_type: mealType,
+      eaten_at: new Date().toISOString(),
     })
     if (!error) {
       setSuccess(`${food.name} ajouté — ${cal} kcal`)
@@ -153,6 +155,7 @@ export default function AddMealPage() {
       quantity_g: manualQty,
       calories: cal,
       meal_type: mealType,
+      eaten_at: new Date().toISOString(),
     })
 
     setSuccess(`${manualName} ajouté et sauvegardé — ${cal} kcal`)
@@ -200,6 +203,7 @@ export default function AddMealPage() {
       quantity_g: 0,
       calories: total,
       meal_type: mealType,
+      eaten_at: new Date().toISOString(),
     })
     setSuccess(`Repas ajouté — ${total} kcal`)
     setRefresh(r => r + 1)
