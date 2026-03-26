@@ -25,8 +25,10 @@ export default function ScanPage() {
   const html5QrRef = useRef<unknown>(null)
 
   useEffect(() => {
-    return () => stopCamera()
-  }, [])
+  return () => {
+    stopCamera()
+  }
+}, [])
 
   async function stopCamera() {
     if (html5QrRef.current) {
