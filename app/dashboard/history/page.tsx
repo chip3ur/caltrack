@@ -24,7 +24,7 @@ export default function HistoryPage() {
   const [openDay, setOpenDay] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
-  const [editValues, setEditValues] = useState<{ food_name: string; calories: string; quantity_g: string; meal_type: string }>({ food_name: '', calories: '', quantity_g: '', meal_type: 'dejeuner' })
+  const [editValues, setEditValues] = useState<{ food_name: string; calories: string; quantity_g: string; meal_type: string; cal_per_100g: number }>({ food_name: '', calories: '', quantity_g: '', meal_type: 'dejeuner', cal_per_100g: 0 })
   const [saving, setSaving] = useState(false)
   const [dailyGoal, setDailyGoal] = useState(2000)
 
@@ -85,11 +85,13 @@ export default function HistoryPage() {
 
   function startEdit(meal: Meal) {
     setEditing(meal.id)
+    const cal_per_100g = meal.quantity_g > 0 ? (meal.calories / meal.quantity_g) * 100 : 0
     setEditValues({
       food_name: meal.food_name,
       calories: String(meal.calories),
       quantity_g: String(meal.quantity_g),
       meal_type: meal.meal_type,
+      cal_per_100g,
     })
   }
 
@@ -181,31 +183,46 @@ export default function HistoryPage() {
                           <div key={meal.id} className="border-b border-[#22222E] last:border-none">
                             {editing === meal.id ? (
                               <div className="py-3 space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Nom</p>
                                   <input
                                     value={editValues.food_name}
                                     onChange={e => setEditValues(v => ({ ...v, food_name: e.target.value }))}
-                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none col-span-2"
-                                    placeholder="Nom"
+                                    className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
                                   />
-                                  <input
-                                    type="number"
-                                    value={editValues.calories}
-                                    onChange={e => setEditValues(v => ({ ...v, calories: e.target.value }))}
-                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
-                                    placeholder="Calories"
-                                  />
-                                  <input
-                                    type="number"
-                                    value={editValues.quantity_g}
-                                    onChange={e => setEditValues(v => ({ ...v, quantity_g: e.target.value }))}
-                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
-                                    placeholder="Quantité (g)"
-                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Quantité (g)</p>
+                                    <input
+                                      type="number"
+                                      value={editValues.quantity_g}
+                                      onChange={e => {
+                                        const qty = e.target.value
+                                        const newCal = editValues.cal_per_100g > 0
+                                          ? String(Math.round(editValues.cal_per_100g * Number(qty) / 100))
+                                          : editValues.calories
+                                        setEditValues(v => ({ ...v, quantity_g: qty, calories: newCal }))
+                                      }}
+                                      className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Calories (kcal)</p>
+                                    <input
+                                      type="number"
+                                      value={editValues.calories}
+                                      onChange={e => setEditValues(v => ({ ...v, calories: e.target.value }))}
+                                      className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Type de repas</p>
                                   <select
                                     value={editValues.meal_type}
                                     onChange={e => setEditValues(v => ({ ...v, meal_type: e.target.value }))}
-                                    className="bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none col-span-2"
+                                    className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
                                   >
                                     <option value="petit-dejeuner">Petit-déjeuner</option>
                                     <option value="dejeuner">Déjeuner</option>
