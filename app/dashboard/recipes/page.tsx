@@ -186,6 +186,111 @@ export default function RecipesPage() {
     setTimeout(() => setLogSuccess(''), 4000)
   }
 
+  const [seeding, setSeeding] = useState(false)
+
+  async function seedRecipes() {
+    setSeeding(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setSeeding(false); return }
+
+    const defaults = [
+      {
+        name: 'Pâtes carbonara',
+        total_weight_g: 700,
+        ingredients: [
+          { name: 'Pâtes (sèches)', quantity_g: 350, calories_per_100g: 358, protein_per_100g: 12, carbs_per_100g: 71, fat_per_100g: 1.5 },
+          { name: 'Lardons', quantity_g: 150, calories_per_100g: 337, protein_per_100g: 17, carbs_per_100g: 1, fat_per_100g: 30 },
+          { name: 'Œufs', quantity_g: 120, calories_per_100g: 143, protein_per_100g: 13, carbs_per_100g: 1, fat_per_100g: 10 },
+          { name: 'Parmesan', quantity_g: 50, calories_per_100g: 420, protein_per_100g: 36, carbs_per_100g: 0, fat_per_100g: 30 },
+          { name: 'Crème fraîche', quantity_g: 100, calories_per_100g: 292, protein_per_100g: 2, carbs_per_100g: 3, fat_per_100g: 30 },
+        ],
+      },
+      {
+        name: 'Poulet rôti',
+        total_weight_g: 1100,
+        ingredients: [
+          { name: 'Poulet entier', quantity_g: 1500, calories_per_100g: 167, protein_per_100g: 20, carbs_per_100g: 0, fat_per_100g: 9 },
+          { name: 'Huile d\'olive', quantity_g: 30, calories_per_100g: 884, protein_per_100g: 0, carbs_per_100g: 0, fat_per_100g: 100 },
+        ],
+      },
+      {
+        name: 'Omelette au fromage',
+        total_weight_g: 300,
+        ingredients: [
+          { name: 'Œufs', quantity_g: 300, calories_per_100g: 143, protein_per_100g: 13, carbs_per_100g: 1, fat_per_100g: 10 },
+          { name: 'Emmental râpé', quantity_g: 60, calories_per_100g: 385, protein_per_100g: 29, carbs_per_100g: 1, fat_per_100g: 30 },
+          { name: 'Beurre', quantity_g: 15, calories_per_100g: 717, protein_per_100g: 1, carbs_per_100g: 0, fat_per_100g: 80 },
+        ],
+      },
+      {
+        name: 'Quiche lorraine',
+        total_weight_g: 700,
+        ingredients: [
+          { name: 'Pâte brisée', quantity_g: 200, calories_per_100g: 400, protein_per_100g: 6, carbs_per_100g: 50, fat_per_100g: 20 },
+          { name: 'Lardons', quantity_g: 150, calories_per_100g: 337, protein_per_100g: 17, carbs_per_100g: 1, fat_per_100g: 30 },
+          { name: 'Crème fraîche', quantity_g: 200, calories_per_100g: 292, protein_per_100g: 2, carbs_per_100g: 3, fat_per_100g: 30 },
+          { name: 'Œufs', quantity_g: 150, calories_per_100g: 143, protein_per_100g: 13, carbs_per_100g: 1, fat_per_100g: 10 },
+          { name: 'Emmental râpé', quantity_g: 80, calories_per_100g: 385, protein_per_100g: 29, carbs_per_100g: 1, fat_per_100g: 30 },
+        ],
+      },
+      {
+        name: 'Riz au lait',
+        total_weight_g: 1000,
+        ingredients: [
+          { name: 'Riz rond', quantity_g: 200, calories_per_100g: 358, protein_per_100g: 7, carbs_per_100g: 78, fat_per_100g: 0.5 },
+          { name: 'Lait entier', quantity_g: 800, calories_per_100g: 61, protein_per_100g: 3.2, carbs_per_100g: 4.7, fat_per_100g: 3.2 },
+          { name: 'Sucre', quantity_g: 80, calories_per_100g: 400, protein_per_100g: 0, carbs_per_100g: 100, fat_per_100g: 0 },
+        ],
+      },
+      {
+        name: 'Salade niçoise',
+        total_weight_g: 500,
+        ingredients: [
+          { name: 'Thon en boîte', quantity_g: 160, calories_per_100g: 116, protein_per_100g: 25, carbs_per_100g: 0, fat_per_100g: 2 },
+          { name: 'Œufs durs', quantity_g: 120, calories_per_100g: 143, protein_per_100g: 13, carbs_per_100g: 1, fat_per_100g: 10 },
+          { name: 'Haricots verts cuits', quantity_g: 100, calories_per_100g: 28, protein_per_100g: 2, carbs_per_100g: 4, fat_per_100g: 0.2 },
+          { name: 'Tomates', quantity_g: 120, calories_per_100g: 18, protein_per_100g: 0.9, carbs_per_100g: 3.5, fat_per_100g: 0.2 },
+          { name: 'Huile d\'olive', quantity_g: 20, calories_per_100g: 884, protein_per_100g: 0, carbs_per_100g: 0, fat_per_100g: 100 },
+        ],
+      },
+    ]
+
+    for (const r of defaults) {
+      const totalCal = r.ingredients.reduce((s, i) => s + i.calories_per_100g * i.quantity_g / 100, 0)
+      const totalProt = r.ingredients.reduce((s, i) => s + i.protein_per_100g * i.quantity_g / 100, 0)
+      const totalCarbs = r.ingredients.reduce((s, i) => s + i.carbs_per_100g * i.quantity_g / 100, 0)
+      const totalFat = r.ingredients.reduce((s, i) => s + i.fat_per_100g * i.quantity_g / 100, 0)
+      const w = r.total_weight_g
+      const cal100 = Math.round(totalCal / w * 100)
+      const prot100 = Math.round(totalProt / w * 100 * 10) / 10
+      const carbs100 = Math.round(totalCarbs / w * 100 * 10) / 10
+      const fat100 = Math.round(totalFat / w * 100 * 10) / 10
+
+      const { data: food } = await supabase.from('foods').insert({
+        name: r.name, calories_per_100g: cal100,
+        protein_per_100g: prot100, carbs_per_100g: carbs100, fat_per_100g: fat100,
+      }).select('id').single()
+      if (!food) continue
+
+      const { data: recipe } = await supabase.from('recipes').insert({
+        user_id: session.user.id, name: r.name,
+        total_weight_g: r.total_weight_g, food_id: food.id,
+      }).select('id').single()
+      if (!recipe) continue
+
+      await supabase.from('recipe_ingredients').insert(
+        r.ingredients.map(i => ({
+          recipe_id: recipe.id, ingredient_name: i.name, quantity_g: i.quantity_g,
+          calories_per_100g: i.calories_per_100g, protein_per_100g: i.protein_per_100g,
+          carbs_per_100g: i.carbs_per_100g, fat_per_100g: i.fat_per_100g,
+        }))
+      )
+    }
+
+    setSeeding(false)
+    await load()
+  }
+
   async function deleteRecipe(id: string, foodId: string) {
     await supabase.from('recipes').delete().eq('id', id)
     await supabase.from('foods').delete().eq('id', foodId)
@@ -358,7 +463,11 @@ export default function RecipesPage() {
       ) : recipes.length === 0 && !creating ? (
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-8 text-center">
           <p className="text-sm text-gray-500 mb-1">Aucune recette enregistrée.</p>
-          <p className="text-xs text-gray-600">Créez une recette pour calculer ses valeurs nutritionnelles.</p>
+          <p className="text-xs text-gray-600 mb-4">Créez une recette ou importez des recettes de base.</p>
+          <button onClick={seedRecipes} disabled={seeding}
+            className="bg-[var(--bg-input)] hover:bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-primary)] px-4 py-2 rounded-xl text-sm disabled:opacity-50">
+            {seeding ? 'Import en cours...' : '↓ Importer des recettes de base'}
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
