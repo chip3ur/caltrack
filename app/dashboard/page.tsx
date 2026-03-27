@@ -80,8 +80,8 @@ export default function DashboardPage() {
     plugins: { legend: { display: false }, tooltip: { enabled: true } }
   }
 
-  const centerTextPlugin = (main: string, sub: string) => ({
-    id: 'centerText',
+  const centerTextPlugin = (id: string, main: string, sub: string) => ({
+    id,
     afterDraw(chart: ChartJS) {
       const { ctx, width, height } = chart
       ctx.save()
@@ -113,14 +113,15 @@ export default function DashboardPage() {
       </div>
 
       {/* STAT CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         {[
           { label: 'Calories', value: totalCal.toLocaleString(), sub: `/ ${goal.toLocaleString()} kcal`, color: 'text-white' },
           { label: 'Restantes', value: remaining.toLocaleString(), sub: 'kcal', color: 'text-blue-300' },
           { label: 'Protéines', value: `${totalProtein}g`, sub: `/ 80g`, color: 'text-blue-300' },
           { label: 'Glucides', value: `${totalCarbs}g`, sub: `/ 230g`, color: 'text-yellow-500' },
+          { label: 'Lipides', value: `${totalFat}g`, sub: `/ 80g`, color: 'text-orange-400', span: true },
         ].map(card => (
-          <div key={card.label} className="bg-[#18181F] border border-[#22222E] rounded-xl p-4">
+          <div key={card.label} className={`bg-[#18181F] border border-[#22222E] rounded-xl p-4 ${'span' in card && card.span ? 'col-span-2 md:col-span-1' : ''}`}>
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">{card.label}</p>
             <p className={`text-2xl font-serif ${card.color}`}>{card.value}</p>
             <p className="text-xs text-gray-600 mt-1">{card.sub}</p>
@@ -137,7 +138,7 @@ export default function DashboardPage() {
             <Doughnut
               data={calData}
               options={chartOptions}
-              plugins={[centerTextPlugin(`${totalCal}`, 'kcal')]}
+              plugins={[centerTextPlugin('calCenter', `${totalCal}`, 'kcal')]}
             />
           </div>
           <div className="flex gap-4 mt-4 justify-center">
@@ -159,7 +160,7 @@ export default function DashboardPage() {
             <Doughnut
               data={macroData}
               options={chartOptions}
-              plugins={[centerTextPlugin(`${totalProtein + totalCarbs + totalFat}g`, 'total')]}
+              plugins={[centerTextPlugin('macroCenter', `${totalProtein + totalCarbs + totalFat}g`, 'total')]}
             />
           </div>
           <div className="flex gap-4 mt-4 justify-center">
