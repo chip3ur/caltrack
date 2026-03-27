@@ -241,14 +241,14 @@ export default function HistoryPage() {
                                   <span className="text-sm text-yellow-500">{meal.calories} kcal</span>
                                   <button
                                     onClick={() => startEdit(meal)}
-                                    className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 hover:underline transition-opacity"
+                                    className="text-xs text-blue-400 md:opacity-0 md:group-hover:opacity-100 hover:underline transition-opacity"
                                   >
                                     Modifier
                                   </button>
                                   <button
                                     onClick={() => deleteMeal(meal.id)}
                                     disabled={deleting === meal.id}
-                                    className="text-xs text-red-400 opacity-0 group-hover:opacity-100 hover:underline transition-opacity disabled:opacity-50"
+                                    className="text-xs text-red-400 md:opacity-0 md:group-hover:opacity-100 hover:underline transition-opacity disabled:opacity-50"
                                   >
                                     {deleting === meal.id ? '...' : 'Supprimer'}
                                   </button>
