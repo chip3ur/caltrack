@@ -36,6 +36,7 @@ export default function RecipesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
   const [openRecipe, setOpenRecipe] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -298,6 +299,61 @@ export default function RecipesPage() {
     setRecipes(prev => prev.filter(r => r.id !== id))
   }
 
+  async function openEdit(r: Recipe) {
+    // ensure ingredients are loaded
+    let ings = r.ingredients
+    if (!ings) {
+      const { data } = await supabase
+        .from('recipe_ingredients')
+        .select('ingredient_name, quantity_g, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g')
+        .eq('recipe_id', r.id)
+      ings = (data ?? []).map((i: any) => ({ ...i, name: i.ingredient_name }))
+      setRecipes(prev => prev.map(x => x.id === r.id ? { ...x, ingredients: ings } : x))
+    }
+    setNewName(r.name)
+    setTotalWeight(String(r.total_weight_g))
+    setIngredients(ings ?? [])
+    setEditingRecipe(r)
+    setCreating(false)
+  }
+
+  async function saveEdit() {
+    if (!editingRecipe || !newName || ingredients.length === 0) return
+    setSaving(true)
+    const w = Number(totalWeight) || rawWeight
+    const { error } = await supabase.from('foods').update({
+      name: newName.trim(),
+      calories_per_100g: cal100,
+      protein_per_100g: prot100,
+      carbs_per_100g: carbs100,
+      fat_per_100g: fat100,
+    }).eq('id', editingRecipe.food_id)
+    if (error) { setSaving(false); return }
+
+    await supabase.from('recipes').update({
+      name: newName.trim(),
+      total_weight_g: w,
+    }).eq('id', editingRecipe.id)
+
+    await supabase.from('recipe_ingredients').delete().eq('recipe_id', editingRecipe.id)
+    await supabase.from('recipe_ingredients').insert(
+      ingredients.map(i => ({
+        recipe_id: editingRecipe.id,
+        ingredient_name: i.name,
+        quantity_g: i.quantity_g,
+        calories_per_100g: i.calories_per_100g,
+        protein_per_100g: i.protein_per_100g,
+        carbs_per_100g: i.carbs_per_100g,
+        fat_per_100g: i.fat_per_100g,
+      }))
+    )
+
+    setEditingRecipe(null)
+    setNewName(''); setTotalWeight(''); setIngredients([])
+    setSaving(false)
+    await load()
+  }
+
   const inp = "w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm outline-none focus:border-blue-500/50"
   const inpSm = "w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm outline-none"
 
@@ -308,7 +364,7 @@ export default function RecipesPage() {
           <p className="text-xs text-gray-500 uppercase tracking-widest">Nutrition</p>
           <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Recettes</h1>
         </div>
-        {!creating && (
+        {!creating && !editingRecipe && (
           <button onClick={() => setCreating(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">
             + Nouvelle recette
@@ -322,12 +378,15 @@ export default function RecipesPage() {
         </div>
       )}
 
-      {/* CRÉER UNE RECETTE */}
-      {creating && (
+      {/* CRÉER / MODIFIER UNE RECETTE */}
+      {(creating || editingRecipe) && (
         <div className="bg-[var(--bg-card)] border border-blue-500/20 rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-500 uppercase tracking-widest">Nouvelle recette</p>
-            <button onClick={() => { setCreating(false); setIngredients([]) }} className="text-xs text-gray-500 hover:text-gray-300">Annuler</button>
+            <p className="text-xs text-gray-500 uppercase tracking-widest">
+              {editingRecipe ? `Modifier — ${editingRecipe.name}` : 'Nouvelle recette'}
+            </p>
+            <button onClick={() => { setCreating(false); setEditingRecipe(null); setIngredients([]); setNewName(''); setTotalWeight('') }}
+              className="text-xs text-gray-500 hover:text-gray-300">Annuler</button>
           </div>
 
           <div className="mb-4">
@@ -418,9 +477,10 @@ export default function RecipesPage() {
             </>
           )}
 
-          <button onClick={saveRecipe} disabled={!newName || ingredients.length === 0 || saving}
+          <button onClick={editingRecipe ? saveEdit : saveRecipe}
+            disabled={!newName || ingredients.length === 0 || saving}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white py-3 rounded-xl text-sm font-medium">
-            {saving ? 'Sauvegarde...' : 'Enregistrer la recette'}
+            {saving ? 'Sauvegarde...' : editingRecipe ? 'Enregistrer les modifications' : 'Enregistrer la recette'}
           </button>
         </div>
       )}
@@ -544,7 +604,11 @@ export default function RecipesPage() {
                     <div className="flex gap-2">
                       <button onClick={() => { setLogRecipe(r); setLogQty('200') }}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium">
-                        Utiliser cette recette
+                        Utiliser
+                      </button>
+                      <button onClick={() => openEdit(r)}
+                        className="px-4 bg-[var(--bg-input)] hover:bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-primary)] py-2.5 rounded-xl text-sm">
+                        Modifier
                       </button>
                       <button onClick={() => deleteRecipe(r.id, r.food_id)}
                         className="px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 py-2.5 rounded-xl text-sm">
