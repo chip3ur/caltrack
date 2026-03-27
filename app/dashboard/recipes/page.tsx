@@ -404,7 +404,7 @@ export default function RecipesPage() {
                     type="number"
                     value={ing.quantity_g}
                     onChange={e => setIngredients(prev => prev.map((x, j) => j === i ? { ...x, quantity_g: Number(e.target.value) || 0 } : x))}
-                    className="w-20 border-2 border-blue-500/50 bg-white dark:bg-gray-900 rounded-lg px-2 py-1 text-sm font-medium text-[var(--text-primary)] text-right outline-none focus:border-blue-500"
+                    className="w-20 border border-[var(--border-input)] focus:border-blue-500/60 bg-[var(--bg-card)] rounded-lg px-2 py-1 text-sm font-medium text-[var(--text-primary)] text-right outline-none"
                   />
                   <span className="text-xs text-gray-500">g</span>
                   <span className="text-xs text-yellow-500 w-14 text-right">{Math.round(ing.calories_per_100g * ing.quantity_g / 100)} kcal</span>
@@ -479,11 +479,20 @@ export default function RecipesPage() {
             </>
           )}
 
-          <button onClick={editingRecipe ? saveEdit : saveRecipe}
-            disabled={!newName || ingredients.length === 0 || saving}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white py-3 rounded-xl text-sm font-medium">
-            {saving ? 'Sauvegarde...' : editingRecipe ? 'Enregistrer les modifications' : 'Enregistrer la recette'}
-          </button>
+          <div className="flex gap-2">
+            {editingRecipe && (
+              <button
+                onClick={() => { setEditingRecipe(null); setNewName(''); setTotalWeight(''); setIngredients([]) }}
+                className="flex-1 border border-[var(--border-input)] text-[var(--text-primary)] py-3 rounded-xl text-sm hover:bg-[var(--bg-input)]">
+                Annuler
+              </button>
+            )}
+            <button onClick={editingRecipe ? saveEdit : saveRecipe}
+              disabled={!newName || ingredients.length === 0 || saving}
+              className="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white py-3 rounded-xl text-sm font-medium">
+              {saving ? 'Sauvegarde...' : editingRecipe ? 'Enregistrer les modifications' : 'Enregistrer la recette'}
+            </button>
+          </div>
         </div>
       )}
 
