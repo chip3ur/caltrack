@@ -398,15 +398,17 @@ export default function RecipesPage() {
           {ingredients.length > 0 && (
             <div className="mb-4 space-y-1.5">
               {ingredients.map((ing, i) => (
-                <div key={i} className="flex items-center justify-between px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg">
-                  <div>
-                    <span className="text-sm text-[var(--text-primary)]">{ing.name}</span>
-                    <span className="text-xs text-gray-500 ml-2">{ing.quantity_g}g</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-yellow-500">{Math.round(ing.calories_per_100g * ing.quantity_g / 100)} kcal</span>
-                    <button onClick={() => setIngredients(prev => prev.filter((_, j) => j !== i))} className="text-xs text-red-400">✕</button>
-                  </div>
+                <div key={i} className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg">
+                  <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{ing.name}</span>
+                  <input
+                    type="number"
+                    value={ing.quantity_g}
+                    onChange={e => setIngredients(prev => prev.map((x, j) => j === i ? { ...x, quantity_g: Number(e.target.value) || 0 } : x))}
+                    className="w-16 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] text-right outline-none"
+                  />
+                  <span className="text-xs text-gray-500">g</span>
+                  <span className="text-xs text-yellow-500 w-14 text-right">{Math.round(ing.calories_per_100g * ing.quantity_g / 100)} kcal</span>
+                  <button onClick={() => setIngredients(prev => prev.filter((_, j) => j !== i))} className="text-xs text-red-400 ml-1">✕</button>
                 </div>
               ))}
               <div className="flex justify-between text-xs text-gray-500 px-1 pt-1">
