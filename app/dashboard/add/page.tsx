@@ -215,13 +215,13 @@ export default function AddMealPage() {
   const calories = selected ? Math.round(selected.calories_per_100g * quantity / 100) : 0
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
         <p className="text-xs text-gray-600 uppercase tracking-widest">Journal</p>
         <h1 className="text-2xl font-serif text-white mt-1">Ajouter un repas</h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div className="flex gap-2 mb-5">
             <button onClick={() => setTab('search')} className={tabClass('search')}>Recherche</button>

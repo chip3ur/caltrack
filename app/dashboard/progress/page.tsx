@@ -120,14 +120,14 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
         <p className="text-xs text-gray-600 uppercase tracking-widest">Suivi</p>
         <h1 className="text-2xl font-serif text-white mt-1">Progression</h1>
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
           { label: 'Poids actuel', value: `${currentWeight} kg`, color: 'text-white' },
           { label: 'Évolution', value: `${diff > 0 ? '+' : ''}${diff} kg`, color: diff < 0 ? 'text-green-400' : diff > 0 ? 'text-red-400' : 'text-gray-400' },
@@ -141,9 +141,9 @@ export default function ProgressPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* COURBE POIDS */}
-        <div className="col-span-2 bg-[#18181F] border border-[#22222E] rounded-xl p-5">
+        <div className="md:col-span-2 bg-[#18181F] border border-[#22222E] rounded-xl p-5">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Courbe de poids</p>
           {logs.length < 2 ? (
             <div className="flex flex-col items-center justify-center h-40 text-center">

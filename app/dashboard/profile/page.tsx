@@ -82,13 +82,13 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
         <p className="text-xs text-gray-600 uppercase tracking-widest">Compte</p>
         <h1 className="text-2xl font-serif text-white mt-1">Mon profil</h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* INFOS PERSONNELLES */}
         <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Informations personnelles</p>
