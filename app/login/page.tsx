@@ -28,18 +28,25 @@ export default function LoginPage() {
   async function handleSubmit() {
     setLoading(true)
     setError('')
-    const { error } = isSignup
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
-    else {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', (await supabase.auth.getSession()).data.session?.user.id)
-    .single()
-  router.push(profile ? '/dashboard' : '/onboarding')
-}
+
+    if (isSignup) {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) setError(error.message)
+      else router.push('/onboarding')
+      setLoading(false)
+      return
+    }
+
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
+    }
+    const userId = authData.user?.id
+    if (!userId) { router.push('/onboarding'); setLoading(false); return }
+    const { data: profile } = await supabase.from('profiles').select('id').eq('id', userId).single()
+    router.push(profile ? '/dashboard' : '/onboarding')
     setLoading(false)
   }
 

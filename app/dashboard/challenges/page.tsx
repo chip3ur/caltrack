@@ -83,26 +83,26 @@ export default function ChallengesPage() {
 
     if (!challengesData) { setLoading(false); return }
 
-    // For each challenge, get my days and participant count
+    // For each challenge, get my days and participant count in parallel
     const results: MyChallenge[] = await Promise.all(challengesData.map(async c => {
       const start = new Date(c.start_date)
       const end = new Date(c.end_date)
       const total_days = Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1
 
-      const { data: myMeals } = await supabase
-        .from('meals')
-        .select('eaten_at')
-        .eq('user_id', session.user.id)
-        .gte('eaten_at', `${c.start_date}T00:00:00`)
-        .lte('eaten_at', `${c.end_date}T23:59:59`)
+      const [{ data: myMeals }, { count }] = await Promise.all([
+        supabase
+          .from('meals')
+          .select('eaten_at')
+          .eq('user_id', session.user.id)
+          .gte('eaten_at', `${c.start_date}T00:00:00`)
+          .lte('eaten_at', `${c.end_date}T23:59:59`),
+        supabase
+          .from('challenge_participants')
+          .select('*', { count: 'exact', head: true })
+          .eq('challenge_id', c.id),
+      ])
 
       const uniqueDays = new Set((myMeals ?? []).map(m => m.eaten_at.split('T')[0]))
-
-      const { count } = await supabase
-        .from('challenge_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('challenge_id', c.id)
-
       return { ...c, my_days: uniqueDays.size, total_days, participants: count ?? 0 }
     }))
 

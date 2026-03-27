@@ -81,7 +81,13 @@ export default function HistoryPage() {
   async function deleteMeal(id: string) {
     setDeleting(id)
     await supabase.from('meals').delete().eq('id', id)
-    await load()
+    setDays(prev => prev
+      .map(day => {
+        const meals = day.meals.filter(m => m.id !== id)
+        return { ...day, meals, total: Math.round(meals.reduce((s, m) => s + m.calories, 0)) }
+      })
+      .filter(day => day.meals.length > 0)
+    )
     setDeleting(null)
   }
 
@@ -99,14 +105,22 @@ export default function HistoryPage() {
 
   async function saveEdit(id: string) {
     setSaving(true)
+    const newCal = Number(editValues.calories)
+    const newQty = Number(editValues.quantity_g)
     await supabase.from('meals').update({
       food_name: editValues.food_name,
-      calories: Number(editValues.calories),
-      quantity_g: Number(editValues.quantity_g),
+      calories: newCal,
+      quantity_g: newQty,
       meal_type: editValues.meal_type,
     }).eq('id', id)
+    setDays(prev => prev.map(day => {
+      const meals = day.meals.map(m => m.id === id
+        ? { ...m, food_name: editValues.food_name, calories: newCal, quantity_g: newQty, meal_type: editValues.meal_type }
+        : m
+      )
+      return { ...day, meals, total: Math.round(meals.reduce((s, m) => s + m.calories, 0)) }
+    }))
     setEditing(null)
-    await load()
     setSaving(false)
   }
 

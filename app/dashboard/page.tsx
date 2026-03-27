@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Doughnut } from 'react-chartjs-2'
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js'
@@ -105,15 +105,17 @@ export default function DashboardPage() {
     setWaterLoading(false)
   }
 
-  const totalCal = Math.round(meals.reduce((s, m) => s + m.calories, 0))
+  const { totalCal, totalProtein, totalCarbs, totalFat } = useMemo(() => ({
+    totalCal: Math.round(meals.reduce((s, m) => s + m.calories, 0)),
+    totalProtein: Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.protein_per_100g * m.quantity_g / 100 : 0), 0)),
+    totalCarbs: Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.carbs_per_100g * m.quantity_g / 100 : 0), 0)),
+    totalFat: Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.fat_per_100g * m.quantity_g / 100 : 0), 0)),
+  }), [meals])
+
   const goal = profile?.daily_calories ?? 2000
   const remaining = Math.max(goal - totalCal, 0)
   const waterGoal = profile?.water_goal_ml ?? 2000
   const waterPct = Math.min(waterToday / waterGoal * 100, 100)
-
-  const totalProtein = Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.protein_per_100g * m.quantity_g / 100 : 0), 0))
-  const totalCarbs = Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.carbs_per_100g * m.quantity_g / 100 : 0), 0))
-  const totalFat = Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.fat_per_100g * m.quantity_g / 100 : 0), 0))
 
   const secondaryBg = { dark: '#2A2A38', cream: '#E2DDD5', light: '#E5E5EA' }[theme]
 
