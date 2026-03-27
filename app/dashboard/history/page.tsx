@@ -9,6 +9,7 @@ type Meal = {
   meal_type: string
   quantity_g: number
   eaten_at: string
+  photo_url?: string | null
 }
 
 type DayGroup = {
@@ -27,6 +28,8 @@ export default function HistoryPage() {
   const [editValues, setEditValues] = useState<{ food_name: string; calories: string; quantity_g: string; meal_type: string; cal_per_100g: number }>({ food_name: '', calories: '', quantity_g: '', meal_type: 'dejeuner', cal_per_100g: 0 })
   const [saving, setSaving] = useState(false)
   const [dailyGoal, setDailyGoal] = useState(2000)
+  const [copying, setCopying] = useState<string | null>(null)
+  const [copySuccess, setCopySuccess] = useState('')
 
   useEffect(() => {
     load()
@@ -40,7 +43,7 @@ export default function HistoryPage() {
     const [{ data: profileData }, { data: mealsData }] = await Promise.all([
       supabase.from('profiles').select('daily_calories').eq('id', session.user.id).single(),
       supabase.from('meals')
-        .select('id, food_name, calories, meal_type, quantity_g, eaten_at')
+        .select('id, food_name, calories, meal_type, quantity_g, eaten_at, photo_url')
         .eq('user_id', session.user.id)
         .order('eaten_at', { ascending: false })
         .limit(200)
@@ -107,6 +110,47 @@ export default function HistoryPage() {
     setSaving(false)
   }
 
+  async function copyDayToToday(day: DayGroup) {
+    setCopying(day.date)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const inserts = day.meals.map(m => ({
+      user_id: session.user.id,
+      food_name: m.food_name,
+      calories: m.calories,
+      meal_type: m.meal_type,
+      quantity_g: m.quantity_g,
+      eaten_at: new Date().toISOString(),
+    }))
+    await supabase.from('meals').insert(inserts)
+    setCopySuccess(`${day.meals.length} repas copiés depuis ${day.label}`)
+    setCopying(null)
+    await load()
+    setTimeout(() => setCopySuccess(''), 4000)
+  }
+
+  function exportCSV() {
+    const BOM = '\uFEFF'
+    const headers = ['Date', 'Repas', 'Aliment', 'Quantité (g)', 'Calories (kcal)']
+    const rows = days.flatMap(day =>
+      day.meals.map(m => [
+        day.date,
+        m.meal_type,
+        `"${m.food_name.replace(/"/g, '""')}"`,
+        m.quantity_g,
+        m.calories,
+      ])
+    )
+    const csv = BOM + [headers, ...rows].map(r => r.join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `caltrack-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   function statusTag(total: number) {
     const diff = total - dailyGoal
     if (diff > 100) return { label: `+${diff} kcal`, color: 'text-red-400 bg-red-500/10 border-red-500/20' }
@@ -130,10 +174,24 @@ export default function HistoryPage() {
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6">
-      <div className="mb-6">
-        <p className="text-xs text-gray-500 uppercase tracking-widest">Journal</p>
-        <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Historique</h1>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-widest">Journal</p>
+          <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Historique</h1>
+        </div>
+        {days.length > 0 && (
+          <button onClick={exportCSV}
+            className="text-xs border border-[var(--border-input)] text-gray-400 hover:text-[var(--text-primary)] px-3 py-2 rounded-lg transition-colors">
+            Exporter CSV
+          </button>
+        )}
       </div>
+
+      {copySuccess && (
+        <div className="mb-4 bg-green-500/10 border border-green-500/30 rounded-xl p-3 text-sm text-green-400">
+          ✓ {copySuccess}
+        </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-gray-500">Chargement...</p>
@@ -247,11 +305,17 @@ export default function HistoryPage() {
                               </div>
                             ) : (
                               <div className="flex items-center justify-between py-2 group">
-                                <div>
-                                  <p className="text-sm text-[var(--text-primary)]">{meal.food_name}</p>
-                                  {meal.quantity_g > 0 && (
-                                    <p className="text-xs text-gray-500">{meal.quantity_g}g</p>
+                                <div className="flex items-center gap-3">
+                                  {meal.photo_url && (
+                                    <img src={meal.photo_url} alt={meal.food_name}
+                                      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"/>
                                   )}
+                                  <div>
+                                    <p className="text-sm text-[var(--text-primary)]">{meal.food_name}</p>
+                                    {meal.quantity_g > 0 && (
+                                      <p className="text-xs text-gray-500">{meal.quantity_g}g</p>
+                                    )}
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <span className="text-sm text-yellow-500">{meal.calories} kcal</span>
@@ -277,7 +341,16 @@ export default function HistoryPage() {
                     ))}
                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--border)]">
                       <span className="text-xs text-gray-500 uppercase tracking-widest">Total</span>
-                      <span className="text-base font-serif text-yellow-500">{day.total.toLocaleString()} kcal</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => copyDayToToday(day)}
+                          disabled={copying === day.date}
+                          className="text-xs text-blue-400 hover:underline disabled:opacity-50"
+                        >
+                          {copying === day.date ? 'Copie...' : 'Copier vers aujourd\'hui'}
+                        </button>
+                        <span className="text-base font-serif text-yellow-500">{day.total.toLocaleString()} kcal</span>
+                      </div>
                     </div>
                   </div>
                 )}

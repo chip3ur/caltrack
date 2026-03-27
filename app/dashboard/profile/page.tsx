@@ -13,6 +13,8 @@ type Profile = {
   activity_level: string
   goal: string
   daily_calories: number
+  water_goal_ml: number
+  notif_noon: boolean
 }
 
 export default function ProfilePage() {
@@ -23,8 +25,14 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default')
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    if (typeof Notification !== 'undefined') {
+      setNotifPermission(Notification.permission)
+    }
+  }, [])
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -34,7 +42,7 @@ export default function ProfilePage() {
     if (data) { setProfile(data); setForm(data) }
   }
 
-  function update(key: keyof Profile, value: string | number) {
+  function update(key: keyof Profile, value: string | number | boolean) {
     setForm(prev => prev ? { ...prev, [key]: value } : prev)
   }
 
@@ -68,6 +76,15 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(''), 3000)
     }
     setSaving(false)
+  }
+
+  async function toggleNotif(enabled: boolean) {
+    if (enabled && typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+      const perm = await Notification.requestPermission()
+      setNotifPermission(perm)
+      if (perm !== 'granted') return
+    }
+    update('notif_noon', enabled)
   }
 
   async function handleLogout() {
@@ -158,13 +175,19 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3">
               <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Objectif</label>
               <select value={form.goal} onChange={e => update('goal', e.target.value)} className={inputClass}>
                 <option value="perte">Perdre du poids (−500 kcal)</option>
                 <option value="maintien">Maintenir mon poids</option>
                 <option value="masse">Prendre de la masse (+300 kcal)</option>
               </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Objectif eau (mL/jour)</label>
+              <input type="number" step="250" value={form.water_goal_ml || 2000}
+                onChange={e => update('water_goal_ml', parseInt(e.target.value) || 2000)} className={inputClass}/>
             </div>
 
             <div className="bg-[var(--bg-input)] border border-yellow-600/20 rounded-xl p-4 text-center">
@@ -199,6 +222,38 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* NOTIFICATIONS */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 mb-4">
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Notifications</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[var(--text-primary)]">Rappel déjeuner</p>
+                <p className="text-xs text-gray-500 mt-0.5">Notification si aucun repas après 12h</p>
+                {notifPermission === 'denied' && (
+                  <p className="text-xs text-red-400 mt-1">Notifications bloquées dans le navigateur</p>
+                )}
+              </div>
+              <button
+                onClick={() => toggleNotif(!form.notif_noon)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  form.notif_noon ? 'bg-blue-600' : 'bg-[var(--bg-secondary)]'
+                }`}
+              >
+                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
+                  form.notif_noon ? 'left-7' : 'left-1'
+                }`}/>
+              </button>
+            </div>
+            {form.notif_noon && notifPermission === 'granted' && (
+              <p className="text-xs text-green-400 mt-3">
+                Notifications actives — fonctionne quand l'appli est ouverte.
+              </p>
+            )}
+            <p className="text-xs text-gray-600 mt-3">
+              N'oublie pas de sauvegarder ton profil après modification.
+            </p>
           </div>
 
           {/* DÉCONNEXION */}
