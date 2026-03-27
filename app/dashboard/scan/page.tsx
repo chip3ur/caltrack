@@ -34,13 +34,27 @@ export default function ScanPage() {
 
     async function init() {
       try {
-        const { Html5Qrcode } = await import('html5-qrcode')
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode')
         if (cancelled) return
-        const scanner = new Html5Qrcode('qr-reader', false)
+        const scanner = new Html5Qrcode('qr-reader', {
+          verbose: false,
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.QR_CODE,
+          ],
+        })
         html5QrRef.current = scanner
         await scanner.start(
-          { facingMode: 'environment' },
-          { fps: 15, qrbox: { width: 280, height: 140 }, aspectRatio: 1.5 },
+          {
+            facingMode: 'environment',
+            advanced: [{ focusMode: 'continuous' } as unknown as MediaTrackConstraintSet],
+          },
+          { fps: 15, qrbox: { width: 300, height: 100 }, aspectRatio: 1.777 },
           async (code: string) => {
             if (cancelled) return
             cancelled = true
