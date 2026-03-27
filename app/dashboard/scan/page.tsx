@@ -59,24 +59,12 @@ export default function ScanPage() {
           await fetchProduct(code)
         }
 
-        const scanConfig = { fps: 15, qrbox: { width: 280, height: 100 } }
-
-        // Try with continuous autofocus first, fallback to plain environment camera
-        try {
-          await scanner.start(
-            { facingMode: 'environment', advanced: [{ focusMode: 'continuous' } as unknown as MediaTrackConstraintSet] },
-            scanConfig,
-            onDetect,
-            () => {}
-          )
-        } catch {
-          await scanner.start(
-            { facingMode: 'environment' },
-            scanConfig,
-            onDetect,
-            () => {}
-          )
-        }
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 15, qrbox: { width: 280, height: 100 } },
+          onDetect,
+          () => {}
+        )
       } catch (e) {
         if (cancelled) return
         const msg = e instanceof Error ? e.message.toLowerCase() : ''
