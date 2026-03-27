@@ -47,15 +47,15 @@ function TodayMeals({ refresh }: { refresh: number }) {
   return (
     <div>
       {meals.map(m => (
-        <div key={m.id} className="flex justify-between items-center py-3 border-b border-[#22222E] last:border-none">
+        <div key={m.id} className="flex justify-between items-center py-3 border-b border-[var(--border)] last:border-none">
           <div>
-            <p className="text-sm font-medium text-white">{m.food_name}</p>
+            <p className="text-sm font-medium text-[var(--text-primary)]">{m.food_name}</p>
             <p className="text-xs text-gray-500 capitalize">{m.meal_type}</p>
           </div>
           <span className="text-sm text-yellow-500 font-medium">{m.calories} kcal</span>
         </div>
       ))}
-      <div className="flex justify-between items-center pt-3 mt-1 border-t border-[#22222E]">
+      <div className="flex justify-between items-center pt-3 mt-1 border-t border-[var(--border)]">
         <span className="text-xs text-gray-500 uppercase tracking-widest">Total</span>
         <span className="text-base font-serif text-yellow-500">{total} kcal</span>
       </div>
@@ -74,7 +74,6 @@ export default function AddMealPage() {
   const [success, setSuccess] = useState('')
   const [refresh, setRefresh] = useState(0)
 
-  // Saisie manuelle
   const [manualName, setManualName] = useState('')
   const [manualCal, setManualCal] = useState('')
   const [manualProtein, setManualProtein] = useState('')
@@ -83,7 +82,6 @@ export default function AddMealPage() {
   const [manualQty, setManualQty] = useState(100)
   const [saving, setSaving] = useState(false)
 
-  // IA
   const [aiInput, setAiInput] = useState('')
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'ai', content: string, total?: number, desc?: string }[]>([])
   const [aiLoading, setAiLoading] = useState(false)
@@ -131,7 +129,6 @@ export default function AddMealPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
 
-    // Sauvegarder dans foods
     const { data: food, error } = await supabase
       .from('foods')
       .insert({
@@ -146,7 +143,6 @@ export default function AddMealPage() {
 
     if (error) { setSaving(false); return }
 
-    // Ajouter dans meals
     const cal = Math.round(parseFloat(manualCal) * manualQty / 100)
     await supabase.from('meals').insert({
       user_id: session.user.id,
@@ -211,14 +207,14 @@ export default function AddMealPage() {
   }
 
   const tabClass = (t: string) => `flex-1 py-2 rounded-lg text-sm transition-colors ${tab === t ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-gray-500 hover:text-gray-300'}`
-  const inputClass = "w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500/50"
+  const inputClass = "w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm outline-none focus:border-blue-500/50"
   const calories = selected ? Math.round(selected.calories_per_100g * quantity / 100) : 0
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
-        <p className="text-xs text-gray-600 uppercase tracking-widest">Journal</p>
-        <h1 className="text-2xl font-serif text-white mt-1">Ajouter un repas</h1>
+        <p className="text-xs text-gray-500 uppercase tracking-widest">Journal</p>
+        <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Ajouter un repas</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -231,8 +227,8 @@ export default function AddMealPage() {
 
           {/* RECHERCHE */}
           {tab === 'search' && (
-            <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-              <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Rechercher dans la base</p>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Rechercher dans la base</p>
               <input
                 placeholder="Riz, poulet, saumon..."
                 value={search}
@@ -244,22 +240,22 @@ export default function AddMealPage() {
                 <div className="space-y-2">
                   {searchResults.map(f => (
                     <div key={f.id} onClick={() => setSelected(f)}
-                      className="flex justify-between items-center p-3 bg-[#1E1E28] border border-[#2E2E3E] hover:border-blue-500/40 rounded-xl cursor-pointer">
-                      <span className="text-sm text-white">{f.name}</span>
+                      className="flex justify-between items-center p-3 bg-[var(--bg-input)] border border-[var(--border-input)] hover:border-blue-500/40 rounded-xl cursor-pointer">
+                      <span className="text-sm text-[var(--text-primary)]">{f.name}</span>
                       <span className="text-sm text-yellow-500">{f.calories_per_100g} kcal/100g</span>
                     </div>
                   ))}
                 </div>
               )}
               {search.length >= 2 && !searching && searchResults.length === 0 && !selected && (
-                <div className="p-3 border border-dashed border-[#2E2E3E] rounded-xl text-sm text-gray-500">
+                <div className="p-3 border border-dashed border-[var(--border-input)] rounded-xl text-sm text-gray-500">
                   Aucun résultat — <button onClick={() => setTab('manual')} className="text-blue-400 hover:underline">ajouter manuellement</button>
                 </div>
               )}
               {selected && (
                 <div className="mt-2">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-medium text-white">{selected.name}</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{selected.name}</span>
                     <button onClick={() => setSelected(null)} className="text-xs text-gray-500 hover:text-gray-300">✕ changer</button>
                   </div>
                   <div className="flex gap-2 mb-3 text-xs text-gray-500">
@@ -269,11 +265,11 @@ export default function AddMealPage() {
                     <span className="text-yellow-500 ml-auto">{selected.calories_per_100g} kcal/100g</span>
                   </div>
                   <div className="mb-3">
-                    <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Quantité (g)</label>
+                    <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Quantité (g)</label>
                     <input type="number" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className={inputClass}/>
                   </div>
                   <div className="mb-4">
-                    <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Type de repas</label>
+                    <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Type de repas</label>
                     <select value={mealType} onChange={e => setMealType(e.target.value)} className={inputClass}>
                       <option value="petit-dejeuner">Petit-déjeuner</option>
                       <option value="dejeuner">Déjeuner</option>
@@ -293,38 +289,38 @@ export default function AddMealPage() {
 
           {/* SAISIE MANUELLE */}
           {tab === 'manual' && (
-            <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-              <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Nouvel aliment</p>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Nouvel aliment</p>
               <p className="text-xs text-gray-500 mb-4">Les données seront sauvegardées pour une prochaine utilisation.</p>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Nom de l'aliment</label>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Nom de l'aliment</label>
                   <input placeholder="Ex : Quiche lorraine" value={manualName} onChange={e => setManualName(e.target.value)} className={inputClass}/>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Calories pour 100g <span className="text-red-400">*</span></label>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Calories pour 100g <span className="text-red-400">*</span></label>
                   <input type="number" placeholder="Ex : 280" value={manualCal} onChange={e => setManualCal(e.target.value)} className={inputClass}/>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-xs text-gray-600 block mb-1">Protéines (g)</label>
+                    <label className="text-xs text-gray-500 block mb-1">Protéines (g)</label>
                     <input type="number" placeholder="0" value={manualProtein} onChange={e => setManualProtein(e.target.value)} className={inputClass}/>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600 block mb-1">Glucides (g)</label>
+                    <label className="text-xs text-gray-500 block mb-1">Glucides (g)</label>
                     <input type="number" placeholder="0" value={manualCarbs} onChange={e => setManualCarbs(e.target.value)} className={inputClass}/>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600 block mb-1">Lipides (g)</label>
+                    <label className="text-xs text-gray-500 block mb-1">Lipides (g)</label>
                     <input type="number" placeholder="0" value={manualFat} onChange={e => setManualFat(e.target.value)} className={inputClass}/>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Quantité consommée (g)</label>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Quantité consommée (g)</label>
                   <input type="number" value={manualQty} onChange={e => setManualQty(Number(e.target.value))} className={inputClass}/>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Type de repas</label>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Type de repas</label>
                   <select value={mealType} onChange={e => setMealType(e.target.value)} className={inputClass}>
                     <option value="petit-dejeuner">Petit-déjeuner</option>
                     <option value="dejeuner">Déjeuner</option>
@@ -347,14 +343,14 @@ export default function AddMealPage() {
 
           {/* SAISIE IA */}
           {tab === 'ai' && (
-            <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-              <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Assistant IA</p>
-              <div className="bg-[#1E1E28] border border-[#2E2E3E] rounded-xl p-3 text-sm text-gray-400 mb-3">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Assistant IA</p>
+              <div className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl p-3 text-sm text-gray-400 mb-3">
                 Décrivez ce que vous avez mangé — j'estime les calories automatiquement.
               </div>
               <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
                 {aiMessages.map((m, i) => (
-                  <div key={i} className={`p-3 rounded-xl text-sm ${m.role === 'user' ? 'bg-blue-600/15 text-blue-200 text-right' : 'bg-[#1E1E28] text-gray-300'}`}>
+                  <div key={i} className={`p-3 rounded-xl text-sm ${m.role === 'user' ? 'bg-blue-600/15 text-blue-200 text-right' : 'bg-[var(--bg-input)] text-gray-300'}`}>
                     <p className="whitespace-pre-line">{m.content}</p>
                     {m.role === 'ai' && m.total && (
                       <button onClick={() => addAIMeal(m.total!, m.desc ?? '')}
@@ -364,13 +360,13 @@ export default function AddMealPage() {
                     )}
                   </div>
                 ))}
-                {aiLoading && <div className="p-3 bg-[#1E1E28] rounded-xl text-sm text-gray-500">Analyse en cours...</div>}
+                {aiLoading && <div className="p-3 bg-[var(--bg-input)] rounded-xl text-sm text-gray-500">Analyse en cours...</div>}
               </div>
               <div className="flex gap-2">
                 <input value={aiInput} onChange={e => setAiInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && sendAI()}
                   placeholder="Ex : 5 sushis et un tiramisu..."
-                  className="flex-1 bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm outline-none"/>
+                  className="flex-1 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm outline-none"/>
                 <button onClick={sendAI} className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-xl text-lg">↑</button>
               </div>
             </div>
@@ -383,8 +379,8 @@ export default function AddMealPage() {
           )}
         </div>
 
-        <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-          <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Repas d'aujourd'hui</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Repas d'aujourd'hui</p>
           <TodayMeals refresh={refresh} />
         </div>
       </div>

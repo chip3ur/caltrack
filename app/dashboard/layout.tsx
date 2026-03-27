@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { ThemeProvider } from './ThemeContext'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [email, setEmail] = useState('')
@@ -20,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [])
 
   if (!mounted) return (
-    <div style={{ height: '100dvh' }} className="flex bg-[#0A0A0F] items-center justify-center">
+    <div style={{ height: '100dvh' }} className="flex bg-[var(--bg-base)] items-center justify-center">
       <p className="text-gray-600 text-sm">Chargement...</p>
     </div>
   )
@@ -40,32 +41,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div style={{ height: '100dvh' }} className="flex bg-[#0A0A0F] text-white overflow-hidden">
+    <div style={{ height: '100dvh' }} className="flex bg-[var(--bg-base)] text-[var(--text-primary)] overflow-hidden">
 
       {/* SIDEBAR DESKTOP */}
-      <aside className="hidden md:flex w-52 min-w-52 bg-[#111118] border-r border-[#22222E] flex-col">
-        <div className="p-5 border-b border-[#22222E]">
+      <aside className="hidden md:flex w-52 min-w-52 bg-[var(--bg-surface)] border-r border-[var(--border)] flex-col">
+        <div className="p-5 border-b border-[var(--border)]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#1E1E28] border border-yellow-600/30 flex items-center justify-center text-sm text-yellow-500">+</div>
-            <span className="font-serif text-lg">CalTrack</span>
+            <div className="w-8 h-8 rounded-lg bg-[var(--bg-input)] border border-yellow-600/30 flex items-center justify-center text-sm text-yellow-500">+</div>
+            <span className="font-serif text-lg text-[var(--text-primary)]">CalTrack</span>
           </div>
         </div>
         <nav className="flex-1 p-3">
-          <p className="text-xs text-gray-600 uppercase tracking-widest px-2 mb-2">Principal</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest px-2 mb-2">Principal</p>
           {navItems.map(item => (
             <Link key={item.href} href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm mb-1 transition-colors
                 ${pathname === item.href
                   ? 'bg-blue-600/15 text-blue-300 border border-blue-500/20'
-                  : 'text-gray-400 hover:bg-[#18181F] hover:text-white'}`}>
+                  : 'text-gray-400 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]'}`}>
               <span>{item.icon}</span>
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="p-3 border-t border-[#22222E]">
+        <div className="p-3 border-t border-[var(--border)]">
           <div className="px-3 py-2 mb-1">
-            <p className="text-xs font-medium text-white truncate">{email}</p>
+            <p className="text-xs font-medium text-[var(--text-primary)] truncate">{email}</p>
           </div>
           <button onClick={handleLogout}
             className="w-full text-left px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-500/10">
@@ -78,19 +79,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col min-h-0">
 
         {/* TOPBAR MOBILE — fixe en haut */}
-        <div className="md:hidden flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[#111118] border-b border-[#22222E]">
-          <span className="font-serif text-lg">CalTrack</span>
+        <div className="md:hidden flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[var(--bg-surface)] border-b border-[var(--border)]">
+          <span className="font-serif text-lg text-[var(--text-primary)]">CalTrack</span>
           <button onClick={() => setMenuOpen(!menuOpen)}
             className="w-8 h-8 flex flex-col items-center justify-center gap-1.5">
-            <span className={`block w-5 h-0.5 bg-white transition-all ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}/>
-            <span className={`block w-5 h-0.5 bg-white transition-all ${menuOpen ? 'opacity-0' : ''}`}/>
-            <span className={`block w-5 h-0.5 bg-white transition-all ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}/>
+            <span className={`block w-5 h-0.5 bg-[var(--text-primary)] transition-all ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}/>
+            <span className={`block w-5 h-0.5 bg-[var(--text-primary)] transition-all ${menuOpen ? 'opacity-0' : ''}`}/>
+            <span className={`block w-5 h-0.5 bg-[var(--text-primary)] transition-all ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}/>
           </button>
         </div>
 
         {/* MENU MOBILE OVERLAY */}
         {menuOpen && (
-          <div className="md:hidden absolute inset-0 z-50 bg-[#0A0A0F]/95 flex flex-col pt-16 px-6">
+          <div className="md:hidden absolute inset-0 z-50 bg-black/85 flex flex-col pt-16 px-6">
             <button onClick={() => setMenuOpen(false)}
               className="absolute top-4 right-4 text-gray-400 text-2xl">✕</button>
             <nav className="space-y-2 mt-4">
@@ -100,7 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`flex items-center gap-4 px-4 py-4 rounded-xl text-base transition-colors
                     ${pathname === item.href
                       ? 'bg-blue-600/15 text-blue-300 border border-blue-500/20'
-                      : 'text-gray-300 hover:bg-[#18181F]'}`}>
+                      : 'text-gray-300 hover:bg-white/5'}`}>
                   <span className="text-xl">{item.icon}</span>
                   {item.label}
                 </Link>
@@ -122,11 +123,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
         {/* BOTTOM NAV MOBILE — fixe en bas */}
-        <nav className="md:hidden flex-shrink-0 flex border-t border-[#22222E] bg-[#111118]">
+        <nav className="md:hidden flex-shrink-0 flex border-t border-[var(--border)] bg-[var(--bg-surface)]">
           {navItems.slice(0, 5).map(item => (
             <Link key={item.href} href={item.href}
               className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs transition-colors
-                ${pathname === item.href ? 'text-blue-300' : 'text-gray-600'}`}>
+                ${pathname === item.href ? 'text-blue-300' : 'text-gray-500'}`}>
               <span className="text-base">{item.icon}</span>
               <span>{item.label}</span>
             </Link>
@@ -134,5 +135,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
       </div>
     </div>
+  )
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </ThemeProvider>
   )
 }

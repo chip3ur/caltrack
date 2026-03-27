@@ -49,7 +49,6 @@ export default function HistoryPage() {
     if (profileData) setDailyGoal(profileData.daily_calories)
     if (!mealsData) { setLoading(false); return }
 
-    // Grouper par jour
     const grouped: Record<string, Meal[]> = {}
     mealsData.forEach(m => {
       const date = m.eaten_at.split('T')[0]
@@ -132,14 +131,14 @@ export default function HistoryPage() {
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
-        <p className="text-xs text-gray-600 uppercase tracking-widest">Journal</p>
-        <h1 className="text-2xl font-serif text-white mt-1">Historique</h1>
+        <p className="text-xs text-gray-500 uppercase tracking-widest">Journal</p>
+        <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Historique</h1>
       </div>
 
       {loading ? (
         <p className="text-sm text-gray-500">Chargement...</p>
       ) : days.length === 0 ? (
-        <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-8 text-center">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-8 text-center">
           <p className="text-sm text-gray-500">Aucun repas enregistré pour l'instant.</p>
           <a href="/dashboard/add" className="text-blue-400 text-sm hover:underline mt-2 block">Ajouter mon premier repas</a>
         </div>
@@ -153,24 +152,24 @@ export default function HistoryPage() {
               .filter(g => g.meals.length > 0)
 
             return (
-              <div key={day.date} className="bg-[#18181F] border border-[#22222E] rounded-xl overflow-hidden">
+              <div key={day.date} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden">
                 <div
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#1E1E28] transition-colors"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-input)] transition-colors"
                   onClick={() => setOpenDay(isOpen ? null : day.date)}
                 >
                   <div>
-                    <p className="text-sm font-medium text-white">{day.label}</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{day.label}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{day.meals.length} repas enregistrés</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-xs px-2 py-1 rounded-full border ${tag.color}`}>{tag.label}</span>
                     <span className="text-base font-serif text-yellow-500">{day.total.toLocaleString()} kcal</span>
-                    <span className="text-gray-600 text-sm">{isOpen ? '↑' : '↓'}</span>
+                    <span className="text-gray-500 text-sm">{isOpen ? '↑' : '↓'}</span>
                   </div>
                 </div>
 
                 {isOpen && (
-                  <div className="border-t border-[#22222E] px-4 pb-4 pt-3">
+                  <div className="border-t border-[var(--border)] px-4 pb-4 pt-3">
                     {grouped.map(({ type, meals }) => (
                       <div key={type} className="mb-4 last:mb-0">
                         <div className="flex items-center gap-2 mb-2">
@@ -180,7 +179,7 @@ export default function HistoryPage() {
                           </p>
                         </div>
                         {meals.map(meal => (
-                          <div key={meal.id} className="border-b border-[#22222E] last:border-none">
+                          <div key={meal.id} className="border-b border-[var(--border)] last:border-none">
                             {editing === meal.id ? (
                               <div className="py-3 space-y-2">
                                 <div>
@@ -188,7 +187,7 @@ export default function HistoryPage() {
                                   <input
                                     value={editValues.food_name}
                                     onChange={e => setEditValues(v => ({ ...v, food_name: e.target.value }))}
-                                    className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] text-sm outline-none"
                                   />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
@@ -204,7 +203,7 @@ export default function HistoryPage() {
                                           : editValues.calories
                                         setEditValues(v => ({ ...v, quantity_g: qty, calories: newCal }))
                                       }}
-                                      className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] text-sm outline-none"
                                     />
                                   </div>
                                   <div>
@@ -213,7 +212,7 @@ export default function HistoryPage() {
                                       type="number"
                                       value={editValues.calories}
                                       onChange={e => setEditValues(v => ({ ...v, calories: e.target.value }))}
-                                      className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] text-sm outline-none"
                                     />
                                   </div>
                                 </div>
@@ -222,7 +221,7 @@ export default function HistoryPage() {
                                   <select
                                     value={editValues.meal_type}
                                     onChange={e => setEditValues(v => ({ ...v, meal_type: e.target.value }))}
-                                    className="w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] text-sm outline-none"
                                   >
                                     <option value="petit-dejeuner">Petit-déjeuner</option>
                                     <option value="dejeuner">Déjeuner</option>
@@ -249,9 +248,9 @@ export default function HistoryPage() {
                             ) : (
                               <div className="flex items-center justify-between py-2 group">
                                 <div>
-                                  <p className="text-sm text-white">{meal.food_name}</p>
+                                  <p className="text-sm text-[var(--text-primary)]">{meal.food_name}</p>
                                   {meal.quantity_g > 0 && (
-                                    <p className="text-xs text-gray-600">{meal.quantity_g}g</p>
+                                    <p className="text-xs text-gray-500">{meal.quantity_g}g</p>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -276,7 +275,7 @@ export default function HistoryPage() {
                         ))}
                       </div>
                     ))}
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#22222E]">
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--border)]">
                       <span className="text-xs text-gray-500 uppercase tracking-widest">Total</span>
                       <span className="text-base font-serif text-yellow-500">{day.total.toLocaleString()} kcal</span>
                     </div>

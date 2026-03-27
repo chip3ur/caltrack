@@ -70,7 +70,6 @@ export default function ScanPage() {
     setError('')
     setProduct(null)
 
-    // 1. Chercher dans Supabase
     const { data: existing } = await supabase
       .from('foods')
       .select('*')
@@ -84,7 +83,6 @@ export default function ScanPage() {
       return
     }
 
-    // 2. Chercher sur Open Food Facts
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`)
       const data = await res.json()
@@ -99,7 +97,6 @@ export default function ScanPage() {
           fat_per_100g: Math.round((nutriments.fat_100g ?? 0) * 10) / 10,
           barcode: code,
         }
-        // Sauvegarder dans Supabase pour la prochaine fois
         const { data: saved } = await supabase.from('foods').insert(food).select().single()
         setProduct(saved ?? { ...food, id: '' })
         setMode('result')
@@ -135,25 +132,25 @@ export default function ScanPage() {
     setTimeout(() => setSuccess(''), 3000)
   }
 
-  const inputClass = "w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500/50"
+  const inputClass = "w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm outline-none focus:border-blue-500/50"
   const cal = product ? Math.round(product.calories_per_100g * quantity / 100) : 0
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
-        <p className="text-xs text-gray-600 uppercase tracking-widest">Ajouter</p>
-        <h1 className="text-2xl font-serif text-white mt-1">Scanner un produit</h1>
+        <p className="text-xs text-gray-500 uppercase tracking-widest">Ajouter</p>
+        <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Scanner un produit</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           {/* SCANNER */}
-          <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5 mb-4">
-            <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Code-barres</p>
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 mb-4">
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Code-barres</p>
 
             {mode !== 'camera' && (
               <>
-                <div className="w-full h-32 bg-[#1E1E28] border border-[#2E2E3E] rounded-xl flex flex-col items-center justify-center mb-3 relative overflow-hidden">
+                <div className="w-full h-32 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl flex flex-col items-center justify-center mb-3 relative overflow-hidden">
                   <div className="absolute w-3/4 h-0.5 bg-blue-500 opacity-60" style={{animation:'scan 2s ease-in-out infinite', top:'40%'}}/>
                   <style>{`@keyframes scan{0%{top:30%}50%{top:70%}100%{top:30%}}`}</style>
                   <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-yellow-500 rounded-tl"/>
@@ -188,7 +185,7 @@ export default function ScanPage() {
               <div>
                 <div id="qr-reader" className="rounded-xl overflow-hidden w-full"/>
                 <button onClick={() => { stopCamera(); setMode('idle') }}
-                  className="w-full mt-3 border border-[#2E2E3E] text-gray-400 py-2 rounded-xl text-sm">
+                  className="w-full mt-3 border border-[var(--border-input)] text-gray-400 py-2 rounded-xl text-sm">
                   Annuler
                 </button>
               </div>
@@ -208,12 +205,12 @@ export default function ScanPage() {
         {/* RÉSULTAT */}
         <div>
           {product && mode === 'result' ? (
-            <div className="bg-[#18181F] border border-yellow-600/20 rounded-xl p-5">
+            <div className="bg-[var(--bg-card)] border border-yellow-600/20 rounded-xl p-5">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Produit trouvé</p>
-                  <p className="text-base font-medium text-white">{product.name}</p>
-                  {barcode && <p className="text-xs text-gray-600 mt-1">Code : {barcode || manualCode}</p>}
+                  <p className="text-base font-medium text-[var(--text-primary)]">{product.name}</p>
+                  {barcode && <p className="text-xs text-gray-500 mt-1">Code : {barcode || manualCode}</p>}
                 </div>
                 <span className="text-xs text-green-300 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">
                   Open Food Facts
@@ -227,7 +224,7 @@ export default function ScanPage() {
                   { label: 'Glucides', value: `${product.carbs_per_100g}g`, unit: '/100g' },
                   { label: 'Lipides', value: `${product.fat_per_100g}g`, unit: '/100g' },
                 ].map(s => (
-                  <div key={s.label} className="bg-[#1E1E28] rounded-xl p-3 text-center">
+                  <div key={s.label} className="bg-[var(--bg-input)] rounded-xl p-3 text-center">
                     <p className="text-sm font-medium text-yellow-500">{s.value}</p>
                     <p className="text-xs text-gray-500">{s.label}</p>
                   </div>
@@ -235,11 +232,11 @@ export default function ScanPage() {
               </div>
 
               <div className="mb-3">
-                <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Quantité (g)</label>
+                <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Quantité (g)</label>
                 <input type="number" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className={inputClass}/>
               </div>
               <div className="mb-4">
-                <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Type de repas</label>
+                <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Type de repas</label>
                 <select value={mealType} onChange={e => setMealType(e.target.value)} className={inputClass}>
                   <option value="petit-dejeuner">Petit-déjeuner</option>
                   <option value="dejeuner">Déjeuner</option>
@@ -253,12 +250,12 @@ export default function ScanPage() {
                 Ajouter au journal
               </button>
               <button onClick={() => { setProduct(null); setMode('idle') }}
-                className="w-full mt-2 border border-[#2E2E3E] text-gray-400 py-2 rounded-xl text-sm">
+                className="w-full mt-2 border border-[var(--border-input)] text-gray-400 py-2 rounded-xl text-sm">
                 Scanner un autre produit
               </button>
             </div>
           ) : (
-            <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5 flex flex-col items-center justify-center h-full min-h-48">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 flex flex-col items-center justify-center h-full min-h-48">
               <p className="text-sm text-gray-500 text-center">Scannez ou saisissez un code-barres pour voir les infos nutritionnelles.</p>
             </div>
           )}

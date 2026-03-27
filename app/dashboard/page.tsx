@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Doughnut } from 'react-chartjs-2'
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js'
+import { useTheme } from './ThemeContext'
 
 ChartJS.register(ArcElement, Tooltip)
 
@@ -21,6 +22,7 @@ type Profile = {
 }
 
 export default function DashboardPage() {
+  const { theme } = useTheme()
   const [meals, setMeals] = useState<Meal[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
 
@@ -53,10 +55,12 @@ export default function DashboardPage() {
   const totalCarbs = Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.carbs_per_100g * m.quantity_g / 100 : 0), 0))
   const totalFat = Math.round(meals.reduce((s, m) => s + (m.foods ? m.foods.fat_per_100g * m.quantity_g / 100 : 0), 0))
 
+  const secondaryBg = { dark: '#2A2A38', cream: '#E2DDD5', light: '#E5E5EA' }[theme]
+
   const calData = {
     datasets: [{
       data: totalCal > 0 ? [totalCal, remaining] : [0, goal],
-      backgroundColor: ['#378ADD', '#2A2A38'],
+      backgroundColor: ['#378ADD', secondaryBg],
       borderWidth: 0,
       hoverOffset: 4,
     }]
@@ -80,7 +84,7 @@ export default function DashboardPage() {
     plugins: { legend: { display: false }, tooltip: { enabled: true } }
   }
 
-const macros = [
+  const macros = [
     { label: 'Protéines', value: totalProtein, goal: 80, color: '#378ADD' },
     { label: 'Glucides', value: totalCarbs, goal: 230, color: '#C9A84C' },
     { label: 'Lipides', value: totalFat, goal: 80, color: '#D85A30' },
@@ -89,8 +93,8 @@ const macros = [
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
-        <p className="text-xs text-gray-600 uppercase tracking-widest">Aujourd'hui</p>
-        <h1 className="text-2xl font-serif text-white mt-1">
+        <p className="text-xs text-gray-500 uppercase tracking-widest">Aujourd'hui</p>
+        <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">
           {profile?.full_name ? `Bonjour, ${profile.full_name}` : 'Dashboard'}
         </h1>
       </div>
@@ -98,16 +102,16 @@ const macros = [
       {/* STAT CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         {[
-          { label: 'Calories', value: totalCal.toLocaleString(), sub: `/ ${goal.toLocaleString()} kcal`, color: 'text-white' },
+          { label: 'Calories', value: totalCal.toLocaleString(), sub: `/ ${goal.toLocaleString()} kcal`, color: 'text-[var(--text-primary)]' },
           { label: 'Restantes', value: remaining.toLocaleString(), sub: 'kcal', color: 'text-blue-300' },
           { label: 'Protéines', value: `${totalProtein}g`, sub: `/ 80g`, color: 'text-blue-300' },
           { label: 'Glucides', value: `${totalCarbs}g`, sub: `/ 230g`, color: 'text-yellow-500' },
           { label: 'Lipides', value: `${totalFat}g`, sub: `/ 80g`, color: 'text-orange-400', span: true },
         ].map(card => (
-          <div key={card.label} className={`bg-[#18181F] border border-[#22222E] rounded-xl p-4 ${'span' in card && card.span ? 'col-span-2 md:col-span-1' : ''}`}>
-            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">{card.label}</p>
+          <div key={card.label} className={`bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4 ${'span' in card && card.span ? 'col-span-2 md:col-span-1' : ''}`}>
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{card.label}</p>
             <p className={`text-2xl font-serif ${card.color}`}>{card.value}</p>
-            <p className="text-xs text-gray-600 mt-1">{card.sub}</p>
+            <p className="text-xs text-gray-500 mt-1">{card.sub}</p>
           </div>
         ))}
       </div>
@@ -115,12 +119,12 @@ const macros = [
       {/* GRAPHIQUES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Anneau calories */}
-        <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-          <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Calories</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Calories</p>
           <div style={{ position: 'relative', height: '180px', maxWidth: '240px', margin: '0 auto' }}>
-            <Doughnut data={calData} options={chartOptions} />
+            <Doughnut key={`cal-${theme}`} data={calData} options={chartOptions} />
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-              <div style={{ fontSize: '22px', fontWeight: '600', color: '#F0EDE6', lineHeight: 1 }}>{totalCal}</div>
+              <div style={{ fontSize: '22px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: 1 }}>{totalCal}</div>
               <div style={{ fontSize: '11px', color: '#55524E', marginTop: '4px' }}>kcal</div>
             </div>
           </div>
@@ -130,19 +134,19 @@ const macros = [
               Consommé
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
-              <div className="w-2.5 h-2.5 rounded-sm bg-[#2A2A38]"/>
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: secondaryBg }}/>
               Restant
             </div>
           </div>
         </div>
 
         {/* Anneau macros */}
-        <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-          <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Macronutriments</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Macronutriments</p>
           <div style={{ position: 'relative', height: '180px', maxWidth: '240px', margin: '0 auto' }}>
-            <Doughnut data={macroData} options={chartOptions} />
+            <Doughnut key={`macro-${theme}`} data={macroData} options={chartOptions} />
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-              <div style={{ fontSize: '22px', fontWeight: '600', color: '#F0EDE6', lineHeight: 1 }}>{totalProtein + totalCarbs + totalFat}g</div>
+              <div style={{ fontSize: '22px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: 1 }}>{totalProtein + totalCarbs + totalFat}g</div>
               <div style={{ fontSize: '11px', color: '#55524E', marginTop: '4px' }}>total</div>
             </div>
           </div>
@@ -161,16 +165,16 @@ const macros = [
         </div>
 
         {/* Barres macros */}
-        <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-          <p className="text-xs text-gray-600 uppercase tracking-widest mb-5">Progression macros</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-5">Progression macros</p>
           <div className="space-y-5">
             {macros.map(m => (
               <div key={m.label}>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-400">{m.label}</span>
-                  <span style={{ color: m.color }}>{m.value}g <span className="text-gray-600">/ {m.goal}g</span></span>
+                  <span style={{ color: m.color }}>{m.value}g <span className="text-gray-500">/ {m.goal}g</span></span>
                 </div>
-                <div className="h-2 bg-[#2E2E3E] rounded-full overflow-hidden">
+                <div className="h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all"
                     style={{ width: `${Math.min(m.value / m.goal * 100, 100)}%`, background: m.color }}/>
                 </div>
@@ -181,9 +185,9 @@ const macros = [
       </div>
 
       {/* REPAS DU JOUR */}
-      <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-gray-600 uppercase tracking-widest">Repas du jour</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest">Repas du jour</p>
           <a href="/dashboard/add" className="text-xs text-blue-400 hover:underline">+ Ajouter</a>
         </div>
         {meals.length === 0 ? (
@@ -191,15 +195,15 @@ const macros = [
         ) : (
           <div>
             {meals.map((m, i) => (
-              <div key={i} className="flex justify-between items-center py-3 border-b border-[#22222E] last:border-none">
+              <div key={i} className="flex justify-between items-center py-3 border-b border-[var(--border)] last:border-none">
                 <div>
-                  <p className="text-sm font-medium text-white">{m.food_name}</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{m.food_name}</p>
                   <p className="text-xs text-gray-500 capitalize">{m.meal_type}</p>
                 </div>
                 <span className="text-sm text-yellow-500 font-medium">{m.calories} kcal</span>
               </div>
             ))}
-            <div className="flex justify-between items-center pt-3 mt-1 border-t border-[#22222E]">
+            <div className="flex justify-between items-center pt-3 mt-1 border-t border-[var(--border)]">
               <span className="text-xs text-gray-500 uppercase tracking-widest">Total</span>
               <span className="text-base font-serif text-yellow-500">{totalCal} kcal</span>
             </div>

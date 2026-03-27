@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useTheme, type Theme } from '../ThemeContext'
 
 type Profile = {
   full_name: string
@@ -16,6 +17,7 @@ type Profile = {
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [form, setForm] = useState<Profile | null>(null)
   const [email, setEmail] = useState('')
@@ -73,7 +75,13 @@ export default function ProfilePage() {
     router.push('/login')
   }
 
-  const inputClass = "w-full bg-[#1E1E28] border border-[#2E2E3E] rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500/50"
+  const inputClass = "w-full bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm outline-none focus:border-blue-500/50"
+
+  const themes: { id: Theme; label: string; bg: string; surface: string; dot: string }[] = [
+    { id: 'dark',  label: 'Sombre', bg: '#0A0A0F', surface: '#18181F', dot: '#378ADD' },
+    { id: 'cream', label: 'Crème',  bg: '#F7F3EC', surface: '#FAF7F2', dot: '#C9A84C' },
+    { id: 'light', label: 'Clair',  bg: '#F2F2F7', surface: '#FFFFFF', dot: '#378ADD' },
+  ]
 
   if (!form) return (
     <div className="flex-1 flex items-center justify-center">
@@ -84,32 +92,32 @@ export default function ProfilePage() {
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
-        <p className="text-xs text-gray-600 uppercase tracking-widest">Compte</p>
-        <h1 className="text-2xl font-serif text-white mt-1">Mon profil</h1>
+        <p className="text-xs text-gray-500 uppercase tracking-widest">Compte</p>
+        <h1 className="text-2xl font-serif text-[var(--text-primary)] mt-1">Mon profil</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* INFOS PERSONNELLES */}
-        <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-          <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Informations personnelles</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Informations personnelles</p>
 
           <div className="mb-3">
-            <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Email</label>
+            <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Email</label>
             <input value={email} disabled className={`${inputClass} opacity-50 cursor-not-allowed`}/>
           </div>
 
           <div className="mb-3">
-            <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Prénom</label>
+            <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Prénom</label>
             <input value={form.full_name} onChange={e => update('full_name', e.target.value)} className={inputClass}/>
           </div>
 
           <div className="flex gap-3 mb-3">
             <div className="flex-1">
-              <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Âge</label>
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Âge</label>
               <input type="number" value={form.age} onChange={e => update('age', parseInt(e.target.value))} className={inputClass}/>
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Sexe</label>
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Sexe</label>
               <select value={form.sex} onChange={e => update('sex', e.target.value)} className={inputClass}>
                 <option value="homme">Homme</option>
                 <option value="femme">Femme</option>
@@ -119,11 +127,11 @@ export default function ProfilePage() {
 
           <div className="flex gap-3 mb-4">
             <div className="flex-1">
-              <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Taille (cm)</label>
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Taille (cm)</label>
               <input type="number" value={form.height_cm} onChange={e => update('height_cm', parseInt(e.target.value))} className={inputClass}/>
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Poids (kg)</label>
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Poids (kg)</label>
               <input type="number" step="0.1" value={form.weight_kg || ''} onChange={e => update('weight_kg', parseFloat(e.target.value) || 0)} className={inputClass}/>
             </div>
           </div>
@@ -137,11 +145,11 @@ export default function ProfilePage() {
 
         <div>
           {/* OBJECTIF & ACTIVITÉ */}
-          <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5 mb-4">
-            <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Objectif & activité</p>
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 mb-4">
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Objectif & activité</p>
 
             <div className="mb-3">
-              <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Niveau d'activité</label>
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Niveau d'activité</label>
               <select value={form.activity_level} onChange={e => update('activity_level', e.target.value)} className={inputClass}>
                 <option value="sedentaire">Sédentaire</option>
                 <option value="leger">Légèrement actif (1–3x/sem)</option>
@@ -151,7 +159,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="mb-4">
-              <label className="text-xs text-gray-600 uppercase tracking-widest block mb-1">Objectif</label>
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Objectif</label>
               <select value={form.goal} onChange={e => update('goal', e.target.value)} className={inputClass}>
                 <option value="perte">Perdre du poids (−500 kcal)</option>
                 <option value="maintien">Maintenir mon poids</option>
@@ -159,7 +167,7 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            <div className="bg-[#1E1E28] border border-yellow-600/20 rounded-xl p-4 text-center">
+            <div className="bg-[var(--bg-input)] border border-yellow-600/20 rounded-xl p-4 text-center">
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Besoin journalier recalculé</p>
               <p className="text-3xl font-serif text-yellow-500">{calculateCalories(form).toLocaleString()} kcal</p>
               {profile && calculateCalories(form) !== profile.daily_calories && (
@@ -168,9 +176,34 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* THÈME */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 mb-4">
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Apparence</p>
+            <div className="grid grid-cols-3 gap-3">
+              {themes.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={`rounded-xl p-3 border-2 transition-all ${
+                    theme === t.id ? 'border-blue-500' : 'border-transparent'
+                  }`}
+                  style={{ background: t.bg }}
+                >
+                  <div className="flex gap-1 mb-2">
+                    <div className="w-3 h-3 rounded-sm" style={{ background: t.surface }}/>
+                    <div className="w-3 h-3 rounded-sm" style={{ background: t.dot }}/>
+                  </div>
+                  <p className="text-xs font-medium text-left" style={{ color: t.id === 'dark' ? '#fff' : '#1A1814' }}>
+                    {t.label}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* DÉCONNEXION */}
-          <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-            <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Session</p>
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5">
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Session</p>
             <button onClick={handleLogout}
               className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 py-3 rounded-xl text-sm font-medium transition-colors">
               Se déconnecter
