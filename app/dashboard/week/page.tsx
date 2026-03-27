@@ -58,15 +58,15 @@ export default function WeekPage() {
       const dayMeals = (mealsData ?? []).filter(m => m.eaten_at.startsWith(dateStr))
       const total = Math.round(dayMeals.reduce((s, m) => s + m.calories, 0))
       const protein = Math.round(dayMeals.reduce((s, m) => {
-        const f = m.foods as { protein_per_100g: number } | null
+        const f = (m.foods as unknown) as { protein_per_100g: number } | null
         return s + (f ? f.protein_per_100g * m.quantity_g / 100 : 0)
       }, 0))
       const carbs = Math.round(dayMeals.reduce((s, m) => {
-        const f = m.foods as { carbs_per_100g: number } | null
+        const f = (m.foods as unknown) as { carbs_per_100g: number } | null
         return s + (f ? f.carbs_per_100g * m.quantity_g / 100 : 0)
       }, 0))
       const fat = Math.round(dayMeals.reduce((s, m) => {
-        const f = m.foods as { fat_per_100g: number } | null
+        const f = (m.foods as unknown) as { fat_per_100g: number } | null
         return s + (f ? f.fat_per_100g * m.quantity_g / 100 : 0)
       }, 0))
       const label = i === 0 ? "Auj." : i === 1 ? 'Hier' :
