@@ -33,6 +33,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     { href: '/dashboard/history', label: 'Historique', icon: '↺' },
     { href: '/dashboard/progress', label: 'Progression', icon: '↗' },
     { href: '/dashboard/week', label: 'Semaine', icon: '◫' },
+    { href: '/dashboard/recipes', label: 'Recettes', icon: '◧' },
     { href: '/dashboard/plans', label: 'Plans', icon: '≡' },
     { href: '/dashboard/challenges', label: 'Défis', icon: '◈' },
     { href: '/dashboard/profile', label: 'Profil', icon: '◉' },

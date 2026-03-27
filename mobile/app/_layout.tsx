@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { supabase } from '../lib/supabase'
+import { ThemeProvider } from '../lib/theme'
 import type { Session } from '@supabase/supabase-js'
 
 export default function RootLayout() {
@@ -34,5 +35,5 @@ export default function RootLayout() {
     // Allow (onboarding) when session exists — login handles the redirect there
   }, [session, ready, segments])
 
-  return <Slot />
+  return <ThemeProvider><Slot /></ThemeProvider>
 }

@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { supabase } from '../../lib/supabase'
+import { useTheme, useColors, type ThemeMode, type Colors } from '../../lib/theme'
 
 const ACTIVITY = [
   { key: 'sedentary', label: 'Sédentaire', mult: 1.2 },
@@ -20,8 +21,16 @@ const GOALS = [
   { key: 'gain', label: 'Prise de masse', delta: 300 },
 ]
 
+const THEMES: { key: ThemeMode; label: string }[] = [
+  { key: 'dark', label: 'Sombre' },
+  { key: 'light', label: 'Clair' },
+  { key: 'creme', label: 'Crème' },
+]
+
 export default function ProfileScreen() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const c = useColors()
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [age, setAge] = useState('')
@@ -34,21 +43,17 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    loadProfile()
-  }, [])
+  useEffect(() => { loadProfile() }, [])
 
   async function loadProfile() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
     setEmail(session.user.email ?? '')
-
     const { data } = await supabase
       .from('profiles')
       .select('full_name, age, sex, height_cm, weight_kg, activity_level, goal, water_goal_ml')
       .eq('id', session.user.id)
       .single()
-
     if (data) {
       setFullName(data.full_name ?? '')
       setAge(data.age ? String(data.age) : '')
@@ -65,9 +70,7 @@ export default function ProfileScreen() {
   function calcCalories() {
     const a = Number(age), h = Number(height), w = Number(weight)
     if (!a || !h || !w) return null
-    const bmr = sex === 'male'
-      ? 10 * w + 6.25 * h - 5 * a + 5
-      : 10 * w + 6.25 * h - 5 * a - 161
+    const bmr = sex === 'male' ? 10 * w + 6.25 * h - 5 * a + 5 : 10 * w + 6.25 * h - 5 * a - 161
     const mult = ACTIVITY.find(x => x.key === activity)?.mult ?? 1.55
     const delta = GOALS.find(x => x.key === goal)?.delta ?? 0
     return Math.max(Math.round(bmr * mult) + delta, 1200)
@@ -77,7 +80,6 @@ export default function ProfileScreen() {
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
-
     const dailyCalories = calcCalories()
     const { error } = await supabase.from('profiles').upsert({
       id: session.user.id,
@@ -91,7 +93,6 @@ export default function ProfileScreen() {
       daily_calories: dailyCalories,
       water_goal_ml: Number(waterGoal) || 2000,
     })
-
     if (error) Alert.alert('Erreur', error.message)
     else Alert.alert('Sauvegardé', 'Profil mis à jour.')
     setSaving(false)
@@ -110,11 +111,12 @@ export default function ProfileScreen() {
     ])
   }
 
-  if (loading) {
-    return <SafeAreaView style={s.center}><ActivityIndicator color="#2563eb" /></SafeAreaView>
-  }
-
   const estimatedCal = calcCalories()
+  const s = makeStyles(c)
+
+  if (loading) {
+    return <SafeAreaView style={s.center}><ActivityIndicator color={c.accent} /></SafeAreaView>
+  }
 
   return (
     <SafeAreaView style={s.safe}>
@@ -130,38 +132,31 @@ export default function ProfileScreen() {
           <Text style={s.sectionTitle}>Informations personnelles</Text>
 
           <Text style={s.label}>Prénom</Text>
-          <TextInput style={s.input} value={fullName} onChangeText={setFullName}
-            placeholder="Ex : Alex" placeholderTextColor="#555" />
+          <TextInput style={s.input} value={fullName} onChangeText={setFullName} placeholder="Ex : Alex" placeholderTextColor={c.placeholder} />
 
           <Text style={s.label}>Âge</Text>
-          <TextInput style={s.input} value={age} onChangeText={setAge}
-            keyboardType="numeric" placeholder="Ex : 28" placeholderTextColor="#555" />
+          <TextInput style={s.input} value={age} onChangeText={setAge} keyboardType="numeric" placeholder="Ex : 28" placeholderTextColor={c.placeholder} />
 
           <Text style={s.label}>Sexe</Text>
           <View style={s.row}>
             {(['male', 'female'] as const).map(g => (
               <TouchableOpacity key={g} style={[s.chip, sex === g && s.chipActive]} onPress={() => setSex(g)}>
-                <Text style={[s.chipText, sex === g && s.chipTextActive]}>
-                  {g === 'male' ? 'Homme' : 'Femme'}
-                </Text>
+                <Text style={[s.chipText, sex === g && s.chipTextActive]}>{g === 'male' ? 'Homme' : 'Femme'}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <Text style={s.label}>Taille (cm)</Text>
-          <TextInput style={s.input} value={height} onChangeText={setHeight}
-            keyboardType="numeric" placeholder="Ex : 175" placeholderTextColor="#555" />
+          <TextInput style={s.input} value={height} onChangeText={setHeight} keyboardType="numeric" placeholder="Ex : 175" placeholderTextColor={c.placeholder} />
 
           <Text style={s.label}>Poids (kg)</Text>
-          <TextInput style={s.input} value={weight} onChangeText={setWeight}
-            keyboardType="numeric" placeholder="Ex : 70" placeholderTextColor="#555" />
+          <TextInput style={s.input} value={weight} onChangeText={setWeight} keyboardType="numeric" placeholder="Ex : 70" placeholderTextColor={c.placeholder} />
 
           <Text style={s.sectionTitle}>Activité & Objectif</Text>
 
           <Text style={s.label}>Niveau d'activité</Text>
           {ACTIVITY.map(a => (
-            <TouchableOpacity key={a.key} style={[s.optionCard, activity === a.key && s.optionActive]}
-              onPress={() => setActivity(a.key)}>
+            <TouchableOpacity key={a.key} style={[s.optionCard, activity === a.key && s.optionActive]} onPress={() => setActivity(a.key)}>
               <Text style={[s.optionText, activity === a.key && s.optionTextActive]}>{a.label}</Text>
             </TouchableOpacity>
           ))}
@@ -184,8 +179,17 @@ export default function ProfileScreen() {
 
           <Text style={s.sectionTitle}>Hydratation</Text>
           <Text style={s.label}>Objectif eau (mL/jour)</Text>
-          <TextInput style={s.input} value={waterGoal} onChangeText={setWaterGoal}
-            keyboardType="numeric" placeholderTextColor="#555" />
+          <TextInput style={s.input} value={waterGoal} onChangeText={setWaterGoal} keyboardType="numeric" placeholderTextColor={c.placeholder} />
+
+          <Text style={s.sectionTitle}>Apparence</Text>
+          <Text style={s.label}>Mode d'éclairage</Text>
+          <View style={s.row}>
+            {THEMES.map(t => (
+              <TouchableOpacity key={t.key} style={[s.chip, theme === t.key && s.chipActive]} onPress={() => setTheme(t.key)}>
+                <Text style={[s.chipText, theme === t.key && s.chipTextActive]}>{t.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <TouchableOpacity style={s.saveBtn} onPress={saveProfile} disabled={saving}>
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnText}>Sauvegarder</Text>}
@@ -200,47 +204,37 @@ export default function ProfileScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0F' },
-  center: { flex: 1, backgroundColor: '#0A0A0F', alignItems: 'center', justifyContent: 'center' },
-  content: { padding: 16, paddingBottom: 48 },
-  heading: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 20 },
-  emailCard: { backgroundColor: '#111118', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#22222E', marginBottom: 24 },
-  emailLabel: { color: '#555', fontSize: 11, marginBottom: 4 },
-  email: { color: '#fff', fontSize: 14 },
-  sectionTitle: { color: '#6B7280', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginTop: 8 },
-  label: { color: '#9CA3AF', fontSize: 12, marginBottom: 6 },
-  input: {
-    backgroundColor: '#111118', borderWidth: 1, borderColor: '#2E2E3E',
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
-    color: '#fff', fontSize: 14, marginBottom: 16,
-  },
-  row: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  chip: {
-    flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
-    backgroundColor: '#111118', borderWidth: 1, borderColor: '#2E2E3E',
-  },
-  chipActive: { backgroundColor: 'rgba(37,99,235,0.15)', borderColor: 'rgba(59,130,246,0.3)' },
-  chipText: { color: '#555', fontSize: 13 },
-  chipTextActive: { color: '#93c5fd' },
-  optionCard: {
-    backgroundColor: '#111118', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#2E2E3E', marginBottom: 8,
-  },
-  optionActive: { borderColor: 'rgba(59,130,246,0.4)', backgroundColor: 'rgba(37,99,235,0.08)' },
-  optionText: { color: '#9CA3AF', fontSize: 14 },
-  optionTextActive: { color: '#93c5fd' },
-  calCard: {
-    backgroundColor: '#111118', borderRadius: 12, padding: 16,
-    borderWidth: 1, borderColor: '#22222E', alignItems: 'center', marginVertical: 12,
-  },
-  calLabel: { color: '#555', fontSize: 12, marginBottom: 4 },
-  calVal: { color: '#93c5fd', fontSize: 24, fontWeight: '700' },
-  saveBtn: { backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 8, marginBottom: 12 },
-  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  logoutBtn: {
-    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12,
-    paddingVertical: 15, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
-  },
-  logoutText: { color: '#f87171', fontSize: 15 },
-})
+function makeStyles(c: Colors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.bg },
+    center: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' },
+    content: { padding: 16, paddingBottom: 48 },
+    heading: { color: c.text, fontSize: 22, fontWeight: '700', marginBottom: 20 },
+    emailCard: { backgroundColor: c.card, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, marginBottom: 24 },
+    emailLabel: { color: c.textDim, fontSize: 11, marginBottom: 4 },
+    email: { color: c.text, fontSize: 14 },
+    sectionTitle: { color: c.textMuted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginTop: 8 },
+    label: { color: c.textSub, fontSize: 12, marginBottom: 6 },
+    input: {
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.borderAlt,
+      borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
+      color: c.text, fontSize: 14, marginBottom: 16,
+    },
+    row: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    chip: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: c.card, borderWidth: 1, borderColor: c.borderAlt },
+    chipActive: { backgroundColor: c.accentLight, borderColor: c.accentBorder },
+    chipText: { color: c.textDim, fontSize: 13 },
+    chipTextActive: { color: c.accentText },
+    optionCard: { backgroundColor: c.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: c.borderAlt, marginBottom: 8 },
+    optionActive: { borderColor: c.accentBorder, backgroundColor: c.accentLight },
+    optionText: { color: c.textSub, fontSize: 14 },
+    optionTextActive: { color: c.accentText },
+    calCard: { backgroundColor: c.card, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, alignItems: 'center', marginVertical: 12 },
+    calLabel: { color: c.textDim, fontSize: 12, marginBottom: 4 },
+    calVal: { color: '#93c5fd', fontSize: 24, fontWeight: '700' },
+    saveBtn: { backgroundColor: c.accent, borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 8, marginBottom: 12 },
+    saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    logoutBtn: { backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, paddingVertical: 15, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },
+    logoutText: { color: '#f87171', fontSize: 15 },
+  })
+}

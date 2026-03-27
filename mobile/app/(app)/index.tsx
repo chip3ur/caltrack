@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
+import { useColors, type Colors } from '../../lib/theme'
 
 type Meal = {
   id: string
@@ -20,6 +21,7 @@ type Profile = {
 }
 
 export default function DashboardScreen() {
+  const c = useColors()
   const [meals, setMeals] = useState<Meal[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [streak, setStreak] = useState(0)
@@ -27,9 +29,7 @@ export default function DashboardScreen() {
   const [waterLoading, setWaterLoading] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -100,13 +100,10 @@ export default function DashboardScreen() {
   const progress = Math.min(totalCal / goal, 1)
   const waterGoal = profile?.water_goal_ml ?? 2000
   const waterPct = Math.min(waterToday / waterGoal, 1)
+  const s = makeStyles(c)
 
   if (loading) {
-    return (
-      <SafeAreaView style={s.center}>
-        <ActivityIndicator color="#2563eb" />
-      </SafeAreaView>
-    )
+    return <SafeAreaView style={s.center}><ActivityIndicator color={c.accent} /></SafeAreaView>
   }
 
   return (
@@ -114,7 +111,6 @@ export default function DashboardScreen() {
       <ScrollView style={s.scroll} contentContainerStyle={s.content}>
         <Text style={s.greeting}>{profile?.full_name ? `Bonjour, ${profile.full_name}` : 'Aujourd\'hui'}</Text>
 
-        {/* Calories card */}
         <View style={s.card}>
           <Text style={s.cardLabel}>CALORIES</Text>
           <Text style={s.calsMain}>{totalCal}</Text>
@@ -125,22 +121,20 @@ export default function DashboardScreen() {
           <Text style={s.remaining}>{remaining} kcal restantes</Text>
         </View>
 
-        {/* Stat cards */}
         <View style={s.statRow}>
           {[
             { label: 'Protéines', val: `${totalProtein}g`, color: '#93c5fd' },
             { label: 'Glucides', val: `${totalCarbs}g`, color: '#fbbf24' },
             { label: 'Lipides', val: `${totalFat}g`, color: '#fb923c' },
-            { label: 'Série', val: `${streak}j`, color: streak >= 7 ? '#fbbf24' : streak >= 3 ? '#4ade80' : '#6B7280' },
-          ].map(c => (
-            <View key={c.label} style={s.statCard}>
-              <Text style={[s.statVal, { color: c.color }]}>{c.val}</Text>
-              <Text style={s.statLabel}>{c.label}</Text>
+            { label: 'Série', val: `${streak}j`, color: streak >= 7 ? '#fbbf24' : streak >= 3 ? '#4ade80' : c.textMuted },
+          ].map(item => (
+            <View key={item.label} style={s.statCard}>
+              <Text style={[s.statVal, { color: item.color }]}>{item.val}</Text>
+              <Text style={s.statLabel}>{item.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Water */}
         <View style={s.card}>
           <View style={s.waterHeader}>
             <Text style={s.cardLabel}>HYDRATATION</Text>
@@ -156,12 +150,9 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          {waterToday >= waterGoal && (
-            <Text style={s.waterDone}>Objectif atteint !</Text>
-          )}
+          {waterToday >= waterGoal && <Text style={s.waterDone}>Objectif atteint !</Text>}
         </View>
 
-        {/* Meals list */}
         <View style={s.card}>
           <Text style={s.cardLabel}>REPAS DU JOUR</Text>
           {meals.length === 0 ? (
@@ -189,49 +180,39 @@ export default function DashboardScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0F' },
-  center: { flex: 1, backgroundColor: '#0A0A0F', alignItems: 'center', justifyContent: 'center' },
-  scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  greeting: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 16 },
-  card: {
-    backgroundColor: '#111118', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#22222E', marginBottom: 12,
-  },
-  cardLabel: { color: '#555', fontSize: 11, letterSpacing: 1, marginBottom: 8 },
-  calsMain: { color: '#fff', fontSize: 48, fontWeight: '700', textAlign: 'center' },
-  calsGoal: { color: '#555', fontSize: 14, textAlign: 'center', marginBottom: 12 },
-  progressBg: { height: 6, backgroundColor: '#1E1E28', borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
-  progressFill: { height: 6, backgroundColor: '#2563eb', borderRadius: 3 },
-  progressWater: { backgroundColor: '#3b82f6' },
-  remaining: { color: '#4B5563', fontSize: 12, textAlign: 'center' },
-  statRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  statCard: {
-    flex: 1, backgroundColor: '#111118', borderRadius: 12,
-    padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#22222E',
-  },
-  statVal: { fontSize: 16, fontWeight: '700' },
-  statLabel: { color: '#555', fontSize: 10, marginTop: 2 },
-  waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  waterVal: { color: '#93c5fd', fontSize: 13, fontWeight: '500' },
-  waterBtns: { flexDirection: 'row', gap: 6, marginTop: 10 },
-  waterBtn: {
-    flex: 1, backgroundColor: '#1E1E28', borderRadius: 10, paddingVertical: 10,
-    alignItems: 'center', borderWidth: 1, borderColor: '#2E2E3E',
-  },
-  waterBtnText: { color: '#fff', fontSize: 11 },
-  waterDone: { color: '#4ade80', fontSize: 12, textAlign: 'center', marginTop: 8 },
-  mealRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1E1E28',
-  },
-  mealInfo: { flex: 1 },
-  mealName: { color: '#fff', fontSize: 14, fontWeight: '500' },
-  mealType: { color: '#555', fontSize: 11, marginTop: 2 },
-  mealCals: { color: '#fbbf24', fontSize: 14, fontWeight: '600' },
-  empty: { color: '#4B4B5A', fontSize: 14, textAlign: 'center', paddingVertical: 16 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10, marginTop: 4 },
-  totalLabel: { color: '#555', fontSize: 12 },
-  totalVal: { color: '#fbbf24', fontSize: 16, fontWeight: '700' },
-})
+function makeStyles(c: Colors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.bg },
+    center: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' },
+    scroll: { flex: 1 },
+    content: { padding: 16, paddingBottom: 32 },
+    greeting: { color: c.text, fontSize: 22, fontWeight: '700', marginBottom: 16 },
+    card: { backgroundColor: c.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: c.border, marginBottom: 12 },
+    cardLabel: { color: c.textDim, fontSize: 11, letterSpacing: 1, marginBottom: 8 },
+    calsMain: { color: c.text, fontSize: 48, fontWeight: '700', textAlign: 'center' },
+    calsGoal: { color: c.textDim, fontSize: 14, textAlign: 'center', marginBottom: 12 },
+    progressBg: { height: 6, backgroundColor: c.cardAlt, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
+    progressFill: { height: 6, backgroundColor: c.accent, borderRadius: 3 },
+    progressWater: { backgroundColor: '#3b82f6' },
+    remaining: { color: c.textMuted, fontSize: 12, textAlign: 'center' },
+    statRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+    statCard: { flex: 1, backgroundColor: c.card, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    statVal: { fontSize: 16, fontWeight: '700' },
+    statLabel: { color: c.textDim, fontSize: 10, marginTop: 2 },
+    waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    waterVal: { color: '#93c5fd', fontSize: 13, fontWeight: '500' },
+    waterBtns: { flexDirection: 'row', gap: 6, marginTop: 10 },
+    waterBtn: { flex: 1, backgroundColor: c.cardAlt, borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: c.borderAlt },
+    waterBtnText: { color: c.text, fontSize: 11 },
+    waterDone: { color: '#4ade80', fontSize: 12, textAlign: 'center', marginTop: 8 },
+    mealRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.cardAlt },
+    mealInfo: { flex: 1 },
+    mealName: { color: c.text, fontSize: 14, fontWeight: '500' },
+    mealType: { color: c.textDim, fontSize: 11, marginTop: 2 },
+    mealCals: { color: '#fbbf24', fontSize: 14, fontWeight: '600' },
+    empty: { color: c.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: 16 },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10, marginTop: 4 },
+    totalLabel: { color: c.textDim, fontSize: 12 },
+    totalVal: { color: '#fbbf24', fontSize: 16, fontWeight: '700' },
+  })
+}

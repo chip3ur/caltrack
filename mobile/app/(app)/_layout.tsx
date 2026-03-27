@@ -1,19 +1,28 @@
 import { Tabs } from 'expo-router'
-import { StyleSheet, Text } from 'react-native'
+import { Text } from 'react-native'
+import { useColors } from '../../lib/theme'
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  return <Text style={{ fontSize: 18, color: focused ? '#93c5fd' : '#4B4B5A' }}>{label}</Text>
+  const c = useColors()
+  return <Text style={{ fontSize: 18, color: focused ? c.accentText : c.textDim }}>{label}</Text>
 }
 
 export default function AppLayout() {
+  const c = useColors()
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: s.tabBar,
-        tabBarActiveTintColor: '#93c5fd',
-        tabBarInactiveTintColor: '#4B4B5A',
-        tabBarLabelStyle: s.label,
+        tabBarStyle: {
+          backgroundColor: c.tabBar,
+          borderTopColor: c.tabBorder,
+          borderTopWidth: 1,
+          height: 64,
+          paddingBottom: 8,
+        },
+        tabBarActiveTintColor: c.accentText,
+        tabBarInactiveTintColor: c.textDim,
+        tabBarLabelStyle: { fontSize: 10 },
       }}
     >
       <Tabs.Screen
@@ -52,6 +61,13 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="recipes"
+        options={{
+          title: 'Recettes',
+          tabBarIcon: ({ focused }) => <TabIcon label="◧" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profil',
@@ -61,16 +77,3 @@ export default function AppLayout() {
     </Tabs>
   )
 }
-
-const s = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#111118',
-    borderTopColor: '#22222E',
-    borderTopWidth: 1,
-    height: 64,
-    paddingBottom: 8,
-  },
-  label: {
-    fontSize: 10,
-  },
-})
