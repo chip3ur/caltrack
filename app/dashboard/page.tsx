@@ -80,24 +80,7 @@ export default function DashboardPage() {
     plugins: { legend: { display: false }, tooltip: { enabled: true } }
   }
 
-  const centerTextPlugin = (id: string, main: string, sub: string) => ({
-    id,
-    afterDraw(chart: ChartJS) {
-      const { ctx, width, height } = chart
-      ctx.save()
-      ctx.font = '500 20px sans-serif'
-      ctx.fillStyle = '#F0EDE6'
-      ctx.textAlign = 'center' as const
-      ctx.textBaseline = 'middle' as const
-      ctx.fillText(main, width / 2, height / 2 - 10)
-      ctx.font = '11px sans-serif'
-      ctx.fillStyle = '#55524E'
-      ctx.fillText(sub, width / 2, height / 2 + 12)
-      ctx.restore()
-    }
-  })
-
-  const macros = [
+const macros = [
     { label: 'Protéines', value: totalProtein, goal: 80, color: '#378ADD' },
     { label: 'Glucides', value: totalCarbs, goal: 230, color: '#C9A84C' },
     { label: 'Lipides', value: totalFat, goal: 80, color: '#D85A30' },
@@ -135,11 +118,11 @@ export default function DashboardPage() {
         <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Calories</p>
           <div style={{ position: 'relative', height: '180px', maxWidth: '240px', margin: '0 auto' }}>
-            <Doughnut
-              data={calData}
-              options={chartOptions}
-              plugins={[centerTextPlugin('calCenter', `${totalCal}`, 'kcal')]}
-            />
+            <Doughnut data={calData} options={chartOptions} />
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+              <div style={{ fontSize: '22px', fontWeight: '600', color: '#F0EDE6', lineHeight: 1 }}>{totalCal}</div>
+              <div style={{ fontSize: '11px', color: '#55524E', marginTop: '4px' }}>kcal</div>
+            </div>
           </div>
           <div className="flex gap-4 mt-4 justify-center">
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
@@ -157,11 +140,11 @@ export default function DashboardPage() {
         <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Macronutriments</p>
           <div style={{ position: 'relative', height: '180px', maxWidth: '240px', margin: '0 auto' }}>
-            <Doughnut
-              data={macroData}
-              options={chartOptions}
-              plugins={[centerTextPlugin('macroCenter', `${totalProtein + totalCarbs + totalFat}g`, 'total')]}
-            />
+            <Doughnut data={macroData} options={chartOptions} />
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+              <div style={{ fontSize: '22px', fontWeight: '600', color: '#F0EDE6', lineHeight: 1 }}>{totalProtein + totalCarbs + totalFat}g</div>
+              <div style={{ fontSize: '11px', color: '#55524E', marginTop: '4px' }}>total</div>
+            </div>
           </div>
           <div className="flex gap-4 mt-4 justify-center">
             {[
