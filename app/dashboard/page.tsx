@@ -104,7 +104,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mb-6">
         <p className="text-xs text-gray-600 uppercase tracking-widest">Aujourd'hui</p>
         <h1 className="text-2xl font-serif text-white mt-1">
@@ -113,7 +113,7 @@ export default function DashboardPage() {
       </div>
 
       {/* STAT CARDS */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
           { label: 'Calories', value: totalCal.toLocaleString(), sub: `/ ${goal.toLocaleString()} kcal`, color: 'text-white' },
           { label: 'Restantes', value: remaining.toLocaleString(), sub: 'kcal', color: 'text-blue-300' },
@@ -129,24 +129,24 @@ export default function DashboardPage() {
       </div>
 
       {/* GRAPHIQUES */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Anneau calories */}
         <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Calories</p>
-          <div style={{ position: 'relative', height: '160px' }}>
+          <div style={{ position: 'relative', height: '180px', maxWidth: '240px', margin: '0 auto' }}>
             <Doughnut
               data={calData}
               options={chartOptions}
               plugins={[centerTextPlugin(`${totalCal}`, 'kcal')]}
             />
           </div>
-          <div className="flex gap-3 mt-3 justify-center">
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <div className="w-2 h-2 rounded-sm bg-blue-500"/>
+          <div className="flex gap-4 mt-4 justify-center">
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <div className="w-2.5 h-2.5 rounded-sm bg-blue-500"/>
               Consommé
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <div className="w-2 h-2 rounded-sm bg-[#2A2A38]"/>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <div className="w-2.5 h-2.5 rounded-sm bg-[#2A2A38]"/>
               Restant
             </div>
           </div>
@@ -155,21 +155,21 @@ export default function DashboardPage() {
         {/* Anneau macros */}
         <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Macronutriments</p>
-          <div style={{ position: 'relative', height: '160px' }}>
+          <div style={{ position: 'relative', height: '180px', maxWidth: '240px', margin: '0 auto' }}>
             <Doughnut
               data={macroData}
               options={chartOptions}
               plugins={[centerTextPlugin(`${totalProtein + totalCarbs + totalFat}g`, 'total')]}
             />
           </div>
-          <div className="flex gap-3 mt-3 justify-center flex-wrap">
+          <div className="flex gap-4 mt-4 justify-center">
             {[
-              { label: 'P', color: '#378ADD' },
-              { label: 'G', color: '#C9A84C' },
-              { label: 'L', color: '#D85A30' },
+              { label: 'Protéines', color: '#378ADD' },
+              { label: 'Glucides', color: '#C9A84C' },
+              { label: 'Lipides', color: '#D85A30' },
             ].map(m => (
-              <div key={m.label} className="flex items-center gap-1 text-xs text-gray-400">
-                <div className="w-2 h-2 rounded-sm" style={{ background: m.color }}/>
+              <div key={m.label} className="flex items-center gap-1.5 text-xs text-gray-400">
+                <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: m.color }}/>
                 {m.label}
               </div>
             ))}
@@ -178,15 +178,15 @@ export default function DashboardPage() {
 
         {/* Barres macros */}
         <div className="bg-[#18181F] border border-[#22222E] rounded-xl p-5">
-          <p className="text-xs text-gray-600 uppercase tracking-widest mb-4">Progression macros</p>
-          <div className="space-y-4">
+          <p className="text-xs text-gray-600 uppercase tracking-widest mb-5">Progression macros</p>
+          <div className="space-y-5">
             {macros.map(m => (
               <div key={m.label}>
-                <div className="flex justify-between text-xs mb-1">
+                <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-400">{m.label}</span>
-                  <span style={{ color: m.color }}>{m.value}g / {m.goal}g</span>
+                  <span style={{ color: m.color }}>{m.value}g <span className="text-gray-600">/ {m.goal}g</span></span>
                 </div>
-                <div className="h-1.5 bg-[#2E2E3E] rounded-full overflow-hidden">
+                <div className="h-2 bg-[#2E2E3E] rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all"
                     style={{ width: `${Math.min(m.value / m.goal * 100, 100)}%`, background: m.color }}/>
                 </div>
