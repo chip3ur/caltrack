@@ -404,7 +404,7 @@ export default function RecipesPage() {
                     type="number"
                     value={ing.quantity_g}
                     onChange={e => setIngredients(prev => prev.map((x, j) => j === i ? { ...x, quantity_g: Number(e.target.value) || 0 } : x))}
-                    className="w-16 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] text-right outline-none"
+                    className="w-20 border-2 border-blue-500/50 bg-white dark:bg-gray-900 rounded-lg px-2 py-1 text-sm font-medium text-[var(--text-primary)] text-right outline-none focus:border-blue-500"
                   />
                   <span className="text-xs text-gray-500">g</span>
                   <span className="text-xs text-yellow-500 w-14 text-right">{Math.round(ing.calories_per_100g * ing.quantity_g / 100)} kcal</span>
