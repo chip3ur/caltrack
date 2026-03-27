@@ -72,7 +72,10 @@ export default function RecipesPage() {
       .select('id, name, total_weight_g, food_id, foods(calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g)')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
-    setRecipes((data ?? []) as Recipe[])
+    setRecipes((data ?? []).map((r: any) => ({
+      ...r,
+      foods: Array.isArray(r.foods) ? (r.foods[0] ?? null) : r.foods,
+    })) as Recipe[])
     setLoading(false)
   }
 
@@ -402,7 +405,7 @@ export default function RecipesPage() {
                         <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Ingrédients</p>
                         {r.ingredients.map((ing, i) => (
                           <div key={i} className="flex justify-between text-sm py-1.5 border-b border-[var(--border)] last:border-none">
-                            <span className="text-[var(--text-primary)]">{ing.ingredient_name}</span>
+                            <span className="text-[var(--text-primary)]">{ing.name}</span>
                             <span className="text-gray-500">{ing.quantity_g}g · {Math.round(ing.calories_per_100g * ing.quantity_g / 100)} kcal</span>
                           </div>
                         ))}
