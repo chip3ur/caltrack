@@ -25,11 +25,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (!ready) return
     const inAuth = segments[0] === '(auth)'
-    if (!session && !inAuth) {
+    const inProtected = segments[0] === '(app)'
+    if (!session && inProtected) {
       router.replace('/(auth)/login')
     } else if (session && inAuth) {
       router.replace('/(app)')
     }
+    // Allow (onboarding) when session exists — login handles the redirect there
   }, [session, ready, segments])
 
   return <Slot />

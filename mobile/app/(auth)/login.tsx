@@ -13,25 +13,41 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+
+  async function handleForgot() {
+    if (!email) { setError('Entrez votre email.'); return }
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    if (error) setError(error.message)
+    else setForgotSent(true)
+    setLoading(false)
+  }
 
   async function handleSubmit() {
     setLoading(true)
     setError('')
 
-    const { error } = isSignup
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      setError(error.message)
+    if (isSignup) {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) { setError(error.message); setLoading(false); return }
+      router.replace('/(onboarding)')
       setLoading(false)
       return
     }
 
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) { setError(error.message); setLoading(false); return }
+
+    const userId = authData.user?.id
+    if (!userId) { router.replace('/(onboarding)'); setLoading(false); return }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
-      .eq('id', (await supabase.auth.getSession()).data.session?.user.id)
+      .eq('id', userId)
       .single()
 
     router.replace(profile ? '/(app)' : '/(onboarding)')
@@ -47,47 +63,80 @@ export default function LoginScreen() {
         <Text style={s.title}>CalTrack</Text>
         <Text style={s.subtitle}>nutrition · performance · résultats</Text>
 
-        <View style={s.tabs}>
-          <TouchableOpacity
-            style={[s.tab, !isSignup && s.tabActive]}
-            onPress={() => setIsSignup(false)}
-          >
-            <Text style={[s.tabText, !isSignup && s.tabTextActive]}>Connexion</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.tab, isSignup && s.tabActive]}
-            onPress={() => setIsSignup(true)}
-          >
-            <Text style={[s.tabText, isSignup && s.tabTextActive]}>Inscription</Text>
-          </TouchableOpacity>
-        </View>
+        {forgotMode ? (
+          forgotSent ? (
+            <View style={s.center}>
+              <Text style={s.success}>Lien envoyé ! Vérifiez votre boîte mail.</Text>
+              <TouchableOpacity onPress={() => { setForgotMode(false); setForgotSent(false) }}>
+                <Text style={s.link}>Retour à la connexion</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <Text style={s.forgotDesc}>Entrez votre email pour recevoir un lien de réinitialisation.</Text>
+              <TextInput
+                style={s.input}
+                placeholder="Email"
+                placeholderTextColor="#555"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+              {error ? <Text style={s.error}>{error}</Text> : null}
+              <TouchableOpacity style={s.btn} onPress={handleForgot} disabled={loading}>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Envoyer le lien</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={s.cancelBtn} onPress={() => { setForgotMode(false); setError('') }}>
+                <Text style={s.cancelText}>Annuler</Text>
+              </TouchableOpacity>
+            </>
+          )
+        ) : (
+          <>
+            <View style={s.tabs}>
+              <TouchableOpacity style={[s.tab, !isSignup && s.tabActive]} onPress={() => setIsSignup(false)}>
+                <Text style={[s.tabText, !isSignup && s.tabTextActive]}>Connexion</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.tab, isSignup && s.tabActive]} onPress={() => setIsSignup(true)}>
+                <Text style={[s.tabText, isSignup && s.tabTextActive]}>Inscription</Text>
+              </TouchableOpacity>
+            </View>
 
-        <TextInput
-          style={s.input}
-          placeholder="Email"
-          placeholderTextColor="#555"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={s.input}
-          placeholder="Mot de passe"
-          placeholderTextColor="#555"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+            <TextInput
+              style={s.input}
+              placeholder="Email"
+              placeholderTextColor="#555"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={s.input}
+              placeholder="Mot de passe"
+              placeholderTextColor="#555"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
 
-        {error ? <Text style={s.error}>{error}</Text> : null}
+            {!isSignup && (
+              <TouchableOpacity onPress={() => { setForgotMode(true); setError('') }} style={s.forgotWrap}>
+                <Text style={s.forgotLink}>Mot de passe oublié ?</Text>
+              </TouchableOpacity>
+            )}
 
-        <TouchableOpacity style={s.btn} onPress={handleSubmit} disabled={loading}>
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={s.btnText}>{isSignup ? 'Créer mon compte' : 'Se connecter'}</Text>
-          }
-        </TouchableOpacity>
+            {error ? <Text style={s.error}>{error}</Text> : null}
+
+            <TouchableOpacity style={s.btn} onPress={handleSubmit} disabled={loading}>
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={s.btnText}>{isSignup ? 'Créer mon compte' : 'Se connecter'}</Text>
+              }
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </KeyboardAvoidingView>
   )
@@ -95,81 +144,35 @@ export default function LoginScreen() {
 
 const s = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#0A0A0F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
+    flex: 1, backgroundColor: '#0A0A0F',
+    alignItems: 'center', justifyContent: 'center', padding: 20,
   },
   card: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#111118',
-    borderRadius: 16,
-    padding: 28,
-    borderWidth: 1,
-    borderColor: '#2E2E3E',
+    width: '100%', maxWidth: 360,
+    backgroundColor: '#111118', borderRadius: 16,
+    padding: 28, borderWidth: 1, borderColor: '#2E2E3E',
   },
-  title: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: '#555',
-    fontSize: 13,
-    marginBottom: 24,
-  },
-  tabs: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  tabActive: {
-    backgroundColor: 'rgba(37,99,235,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.3)',
-  },
-  tabText: {
-    color: '#555',
-    fontSize: 14,
-  },
-  tabTextActive: {
-    color: '#93c5fd',
-  },
+  title: { color: '#fff', fontSize: 22, fontWeight: '600', marginBottom: 4 },
+  subtitle: { color: '#555', fontSize: 13, marginBottom: 24 },
+  tabs: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  tabActive: { backgroundColor: 'rgba(37,99,235,0.15)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.3)' },
+  tabText: { color: '#555', fontSize: 14 },
+  tabTextActive: { color: '#93c5fd' },
   input: {
-    backgroundColor: '#1E1E28',
-    borderWidth: 1,
-    borderColor: '#2E2E3E',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#fff',
-    fontSize: 14,
-    marginBottom: 12,
+    backgroundColor: '#1E1E28', borderWidth: 1, borderColor: '#2E2E3E',
+    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
+    color: '#fff', fontSize: 14, marginBottom: 12,
   },
-  error: {
-    color: '#f87171',
-    fontSize: 13,
-    marginBottom: 12,
-  },
-  btn: {
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  forgotWrap: { alignItems: 'flex-end', marginBottom: 12, marginTop: -4 },
+  forgotLink: { color: '#555', fontSize: 12 },
+  forgotDesc: { color: '#9CA3AF', fontSize: 13, marginBottom: 16 },
+  error: { color: '#f87171', fontSize: 13, marginBottom: 12 },
+  success: { color: '#4ade80', fontSize: 14, marginBottom: 16, textAlign: 'center' },
+  btn: { backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 4 },
+  btnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  cancelBtn: { paddingVertical: 12, alignItems: 'center', marginTop: 8 },
+  cancelText: { color: '#555', fontSize: 13 },
+  center: { alignItems: 'center' },
+  link: { color: '#60a5fa', fontSize: 13 },
 })

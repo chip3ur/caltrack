@@ -1,122 +1,266 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
+  StyleSheet, ScrollView, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 
-export default function AddScreen() {
-  const [name, setName] = useState('')
-  const [calories, setCalories] = useState('')
-  const [protein, setProtein] = useState('')
-  const [carbs, setCarbs] = useState('')
-  const [fat, setFat] = useState('')
-  const [loading, setLoading] = useState(false)
+type Food = {
+  id: string
+  name: string
+  calories_per_100g: number
+  protein_per_100g: number
+  carbs_per_100g: number
+  fat_per_100g: number
+}
 
-  async function handleAdd() {
-    if (!name || !calories) {
+const MEAL_TYPES = [
+  { key: 'petit-dejeuner', label: 'Petit-déjeuner' },
+  { key: 'dejeuner', label: 'Déjeuner' },
+  { key: 'gouter', label: 'Goûter' },
+  { key: 'diner', label: 'Dîner' },
+]
+
+type Tab = 'search' | 'manual'
+
+export default function AddScreen() {
+  const [tab, setTab] = useState<Tab>('search')
+  const [mealType, setMealType] = useState('dejeuner')
+  const [quantity, setQuantity] = useState('100')
+
+  // Search tab
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<Food[]>([])
+  const [searching, setSearching] = useState(false)
+  const [selected, setSelected] = useState<Food | null>(null)
+
+  // Manual tab
+  const [manName, setManName] = useState('')
+  const [manCal, setManCal] = useState('')
+  const [manProt, setManProt] = useState('')
+  const [manCarbs, setManCarbs] = useState('')
+  const [manFat, setManFat] = useState('')
+
+  const [saving, setSaving] = useState(false)
+
+  async function search() {
+    if (!query.trim()) return
+    setSearching(true)
+    setSelected(null)
+    const { data } = await supabase
+      .from('foods')
+      .select('id, name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g')
+      .ilike('name', `%${query}%`)
+      .limit(20)
+    setResults(data ?? [])
+    setSearching(false)
+  }
+
+  async function addFromSearch() {
+    if (!selected) return
+    const qty = Number(quantity) || 100
+    const cal = Math.round(selected.calories_per_100g * qty / 100)
+    setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const { error } = await supabase.from('meals').insert({
+      user_id: session.user.id,
+      food_name: selected.name,
+      food_id: selected.id,
+      quantity_g: qty,
+      calories: cal,
+      meal_type: mealType,
+      eaten_at: new Date().toISOString(),
+    })
+    if (error) Alert.alert('Erreur', error.message)
+    else {
+      Alert.alert('Ajouté !', `${selected.name} — ${cal} kcal`)
+      setSelected(null)
+      setQuery('')
+      setResults([])
+      setQuantity('100')
+    }
+    setSaving(false)
+  }
+
+  async function addManual() {
+    if (!manName || !manCal) {
       Alert.alert('Champs requis', 'Le nom et les calories sont obligatoires.')
       return
     }
-    setLoading(true)
-    const user = (await supabase.auth.getSession()).data.session?.user
-    if (!user) return
+    const qty = Number(quantity) || 100
+    const cal100 = Number(manCal)
+    const prot100 = Number(manProt) || 0
+    const carbs100 = Number(manCarbs) || 0
+    const fat100 = Number(manFat) || 0
+    const cal = Math.round(cal100 * qty / 100)
+
+    setSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    // Save food entry to reuse macros
+    const { data: food } = await supabase.from('foods').insert({
+      name: manName.trim(),
+      calories_per_100g: cal100,
+      protein_per_100g: prot100,
+      carbs_per_100g: carbs100,
+      fat_per_100g: fat100,
+    }).select('id').single()
 
     const { error } = await supabase.from('meals').insert({
-      user_id: user.id,
-      name,
-      calories: Number(calories),
-      protein: Number(protein) || 0,
-      carbs: Number(carbs) || 0,
-      fat: Number(fat) || 0,
+      user_id: session.user.id,
+      food_name: manName.trim(),
+      food_id: food?.id ?? null,
+      quantity_g: qty,
+      calories: cal,
+      meal_type: mealType,
+      eaten_at: new Date().toISOString(),
     })
 
-    if (error) {
-      Alert.alert('Erreur', error.message)
-    } else {
-      Alert.alert('Ajouté !', `${name} ajouté avec succès.`)
-      setName('')
-      setCalories('')
-      setProtein('')
-      setCarbs('')
-      setFat('')
+    if (error) Alert.alert('Erreur', error.message)
+    else {
+      Alert.alert('Ajouté !', `${manName} — ${cal} kcal`)
+      setManName(''); setManCal(''); setManProt(''); setManCarbs(''); setManFat('')
+      setQuantity('100')
     }
-    setLoading(false)
+    setSaving(false)
   }
+
+  const previewCal = selected
+    ? Math.round(selected.calories_per_100g * (Number(quantity) || 100) / 100)
+    : 0
 
   return (
     <SafeAreaView style={s.safe}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView style={s.scroll} contentContainerStyle={s.content}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
           <Text style={s.heading}>Ajouter un repas</Text>
 
-          <Text style={s.label}>Nom de l'aliment *</Text>
-          <TextInput
-            style={s.input}
-            placeholder="Ex : Poulet grillé"
-            placeholderTextColor="#555"
-            value={name}
-            onChangeText={setName}
-          />
+          {/* Meal type */}
+          <Text style={s.label}>Type de repas</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.mealTypeScroll}>
+            {MEAL_TYPES.map(mt => (
+              <TouchableOpacity key={mt.key}
+                style={[s.mealTypeChip, mealType === mt.key && s.mealTypeActive]}
+                onPress={() => setMealType(mt.key)}>
+                <Text style={[s.mealTypeText, mealType === mt.key && s.mealTypeTextActive]}>{mt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          <Text style={s.label}>Calories *</Text>
-          <TextInput
-            style={s.input}
-            placeholder="Ex : 250"
-            placeholderTextColor="#555"
-            keyboardType="numeric"
-            value={calories}
-            onChangeText={setCalories}
-          />
-
-          <Text style={s.sectionTitle}>Macronutriments (optionnel)</Text>
-
-          <View style={s.macroRow}>
-            <View style={s.macroField}>
-              <Text style={s.label}>Protéines (g)</Text>
-              <TextInput
-                style={s.input}
-                placeholder="0"
-                placeholderTextColor="#555"
-                keyboardType="numeric"
-                value={protein}
-                onChangeText={setProtein}
-              />
-            </View>
-            <View style={s.macroField}>
-              <Text style={s.label}>Glucides (g)</Text>
-              <TextInput
-                style={s.input}
-                placeholder="0"
-                placeholderTextColor="#555"
-                keyboardType="numeric"
-                value={carbs}
-                onChangeText={setCarbs}
-              />
-            </View>
-            <View style={s.macroField}>
-              <Text style={s.label}>Lipides (g)</Text>
-              <TextInput
-                style={s.input}
-                placeholder="0"
-                placeholderTextColor="#555"
-                keyboardType="numeric"
-                value={fat}
-                onChangeText={setFat}
-              />
-            </View>
+          {/* Tabs */}
+          <View style={s.tabs}>
+            <TouchableOpacity style={[s.tab, tab === 'search' && s.tabActive]} onPress={() => setTab('search')}>
+              <Text style={[s.tabText, tab === 'search' && s.tabTextActive]}>Recherche</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.tab, tab === 'manual' && s.tabActive]} onPress={() => setTab('manual')}>
+              <Text style={[s.tabText, tab === 'manual' && s.tabTextActive]}>Manuel</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={s.btn} onPress={handleAdd} disabled={loading}>
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={s.btnText}>Ajouter</Text>
-            }
-          </TouchableOpacity>
+          {tab === 'search' && (
+            <>
+              <View style={s.searchRow}>
+                <TextInput
+                  style={[s.input, { flex: 1, marginBottom: 0 }]}
+                  placeholder="Rechercher un aliment..."
+                  placeholderTextColor="#555"
+                  value={query}
+                  onChangeText={setQuery}
+                  onSubmitEditing={search}
+                  returnKeyType="search"
+                />
+                <TouchableOpacity style={s.searchBtn} onPress={search} disabled={searching}>
+                  {searching ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.searchBtnText}>→</Text>}
+                </TouchableOpacity>
+              </View>
+
+              {results.length > 0 && !selected && (
+                <View style={s.resultsList}>
+                  {results.map(f => (
+                    <TouchableOpacity key={f.id} style={s.resultRow} onPress={() => { setSelected(f); setResults([]) }}>
+                      <Text style={s.resultName}>{f.name}</Text>
+                      <Text style={s.resultCal}>{f.calories_per_100g} kcal/100g</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {selected && (
+                <View style={s.selectedCard}>
+                  <Text style={s.selectedName}>{selected.name}</Text>
+                  <View style={s.macroRow}>
+                    <Text style={s.macroText}>{selected.calories_per_100g} kcal</Text>
+                    <Text style={s.macroText}>P: {selected.protein_per_100g}g</Text>
+                    <Text style={s.macroText}>G: {selected.carbs_per_100g}g</Text>
+                    <Text style={s.macroText}>L: {selected.fat_per_100g}g</Text>
+                  </View>
+                  <Text style={s.label}>Quantité (g)</Text>
+                  <TextInput style={s.input} value={quantity} onChangeText={setQuantity}
+                    keyboardType="numeric" placeholderTextColor="#555" />
+                  <Text style={s.preview}>{previewCal} kcal</Text>
+                  <TouchableOpacity style={s.btn} onPress={addFromSearch} disabled={saving}>
+                    {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Ajouter au journal</Text>}
+                  </TouchableOpacity>
+                  <TouchableOpacity style={s.cancelBtn} onPress={() => setSelected(null)}>
+                    <Text style={s.cancelText}>Annuler</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {results.length === 0 && !searching && query.length > 0 && !selected && (
+                <Text style={s.empty}>Aucun résultat — essayez l'onglet Manuel</Text>
+              )}
+            </>
+          )}
+
+          {tab === 'manual' && (
+            <>
+              <Text style={s.label}>Nom de l'aliment *</Text>
+              <TextInput style={s.input} placeholder="Ex : Poulet grillé" placeholderTextColor="#555"
+                value={manName} onChangeText={setManName} />
+
+              <Text style={s.label}>Calories / 100g *</Text>
+              <TextInput style={s.input} placeholder="Ex : 165" placeholderTextColor="#555"
+                keyboardType="numeric" value={manCal} onChangeText={setManCal} />
+
+              <Text style={s.sectionLabel}>Macros / 100g (optionnel)</Text>
+              <View style={s.macroInputRow}>
+                <View style={s.macroField}>
+                  <Text style={s.label}>Protéines (g)</Text>
+                  <TextInput style={s.input} placeholder="0" placeholderTextColor="#555"
+                    keyboardType="numeric" value={manProt} onChangeText={setManProt} />
+                </View>
+                <View style={s.macroField}>
+                  <Text style={s.label}>Glucides (g)</Text>
+                  <TextInput style={s.input} placeholder="0" placeholderTextColor="#555"
+                    keyboardType="numeric" value={manCarbs} onChangeText={setManCarbs} />
+                </View>
+                <View style={s.macroField}>
+                  <Text style={s.label}>Lipides (g)</Text>
+                  <TextInput style={s.input} placeholder="0" placeholderTextColor="#555"
+                    keyboardType="numeric" value={manFat} onChangeText={setManFat} />
+                </View>
+              </View>
+
+              <Text style={s.label}>Quantité (g)</Text>
+              <TextInput style={s.input} value={quantity} onChangeText={setQuantity}
+                keyboardType="numeric" placeholderTextColor="#555" />
+
+              {manCal ? (
+                <Text style={s.preview}>
+                  {Math.round(Number(manCal) * (Number(quantity) || 100) / 100)} kcal
+                </Text>
+              ) : null}
+
+              <TouchableOpacity style={s.btn} onPress={addManual} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Ajouter au journal</Text>}
+              </TouchableOpacity>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -125,24 +269,45 @@ export default function AddScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A0F' },
-  scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
-  heading: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 20 },
+  content: { padding: 16, paddingBottom: 48 },
+  heading: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 16 },
   label: { color: '#9CA3AF', fontSize: 12, marginBottom: 6 },
+  sectionLabel: { color: '#6B7280', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginTop: 4 },
   input: {
     backgroundColor: '#111118', borderWidth: 1, borderColor: '#2E2E3E',
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
     color: '#fff', fontSize: 14, marginBottom: 16,
   },
-  sectionTitle: {
-    color: '#6B7280', fontSize: 12, textTransform: 'uppercase',
-    letterSpacing: 1, marginBottom: 12, marginTop: 4,
+  mealTypeScroll: { marginBottom: 16 },
+  mealTypeChip: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8,
+    backgroundColor: '#111118', borderWidth: 1, borderColor: '#2E2E3E',
   },
-  macroRow: { flexDirection: 'row', gap: 10 },
+  mealTypeActive: { backgroundColor: 'rgba(37,99,235,0.15)', borderColor: 'rgba(59,130,246,0.3)' },
+  mealTypeText: { color: '#555', fontSize: 13 },
+  mealTypeTextActive: { color: '#93c5fd' },
+  tabs: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: '#111118', borderWidth: 1, borderColor: '#2E2E3E' },
+  tabActive: { backgroundColor: 'rgba(37,99,235,0.15)', borderColor: 'rgba(59,130,246,0.3)' },
+  tabText: { color: '#555', fontSize: 14 },
+  tabTextActive: { color: '#93c5fd' },
+  searchRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  searchBtn: { backgroundColor: '#2563eb', borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
+  searchBtnText: { color: '#fff', fontSize: 18 },
+  resultsList: { backgroundColor: '#111118', borderRadius: 12, borderWidth: 1, borderColor: '#22222E', marginBottom: 12, overflow: 'hidden' },
+  resultRow: { padding: 14, borderBottomWidth: 1, borderBottomColor: '#1E1E28', flexDirection: 'row', justifyContent: 'space-between' },
+  resultName: { color: '#fff', fontSize: 14, flex: 1 },
+  resultCal: { color: '#93c5fd', fontSize: 13 },
+  selectedCard: { backgroundColor: '#111118', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#22222E', marginBottom: 12 },
+  selectedName: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 10 },
+  macroRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  macroText: { color: '#555', fontSize: 12 },
+  macroInputRow: { flexDirection: 'row', gap: 8 },
   macroField: { flex: 1 },
-  btn: {
-    backgroundColor: '#2563eb', borderRadius: 12,
-    paddingVertical: 15, alignItems: 'center', marginTop: 8,
-  },
-  btnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  preview: { color: '#fbbf24', fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
+  btn: { backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginBottom: 8 },
+  btnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  cancelBtn: { paddingVertical: 10, alignItems: 'center' },
+  cancelText: { color: '#555', fontSize: 13 },
+  empty: { color: '#4B4B5A', fontSize: 14, textAlign: 'center', paddingVertical: 20 },
 })
