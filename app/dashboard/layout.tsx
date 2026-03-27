@@ -20,7 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [])
 
   if (!mounted) return (
-    <div className="flex h-screen bg-[#0A0A0F] items-center justify-center">
+    <div style={{ height: '100dvh' }} className="flex bg-[#0A0A0F] items-center justify-center">
       <p className="text-gray-600 text-sm">Chargement...</p>
     </div>
   )
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen bg-[#0A0A0F] text-white overflow-hidden">
+    <div style={{ height: '100dvh' }} className="flex bg-[#0A0A0F] text-white overflow-hidden">
 
       {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex w-52 min-w-52 bg-[#111118] border-r border-[#22222E] flex-col">
@@ -74,11 +74,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* MAIN */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* MAIN MOBILE */}
+      <div className="flex-1 flex flex-col min-h-0">
 
-        {/* TOPBAR MOBILE */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#111118] border-b border-[#22222E]">
+        {/* TOPBAR MOBILE — fixe en haut */}
+        <div className="md:hidden flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[#111118] border-b border-[#22222E]">
           <span className="font-serif text-lg">CalTrack</span>
           <button onClick={() => setMenuOpen(!menuOpen)}
             className="w-8 h-8 flex flex-col items-center justify-center gap-1.5">
@@ -116,12 +116,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
 
-        <main className="flex-1 overflow-hidden flex flex-col">
+        {/* CONTENU — scrollable entre les deux barres */}
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {children}
         </main>
 
-        {/* BOTTOM NAV MOBILE */}
-        <nav className="md:hidden flex border-t border-[#22222E] bg-[#111118]">
+        {/* BOTTOM NAV MOBILE — fixe en bas */}
+        <nav className="md:hidden flex-shrink-0 flex border-t border-[#22222E] bg-[#111118]">
           {navItems.slice(0, 5).map(item => (
             <Link key={item.href} href={item.href}
               className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs transition-colors
