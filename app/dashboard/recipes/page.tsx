@@ -82,9 +82,10 @@ export default function RecipesPage() {
   async function loadIngredients(recipeId: string) {
     const { data } = await supabase
       .from('recipe_ingredients')
-      .select('*')
+      .select('ingredient_name, quantity_g, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g')
       .eq('recipe_id', recipeId)
-    setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, ingredients: data ?? [] } : r))
+    const normalized = (data ?? []).map((i: any) => ({ ...i, name: i.ingredient_name }))
+    setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, ingredients: normalized } : r))
   }
 
   async function searchFoods(q: string) {
@@ -510,14 +511,34 @@ export default function RecipesPage() {
                     )}
                     {/* Ingrédients */}
                     {r.ingredients && r.ingredients.length > 0 && (
-                      <div className="mb-4 space-y-1">
+                      <div className="mb-4">
                         <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Ingrédients</p>
-                        {r.ingredients.map((ing, i) => (
-                          <div key={i} className="flex justify-between text-sm py-1.5 border-b border-[var(--border)] last:border-none">
-                            <span className="text-[var(--text-primary)]">{ing.name}</span>
-                            <span className="text-gray-500">{ing.quantity_g}g · {Math.round(ing.calories_per_100g * ing.quantity_g / 100)} kcal</span>
+                        <div className="rounded-xl overflow-hidden border border-[var(--border)]">
+                          <div className="grid grid-cols-5 gap-2 px-3 py-1.5 bg-[var(--bg-input)] text-xs text-gray-500">
+                            <span className="col-span-2">Aliment</span>
+                            <span className="text-right">Qté</span>
+                            <span className="text-right">kcal</span>
+                            <span className="text-right">P/G/L</span>
                           </div>
-                        ))}
+                          {r.ingredients.map((ing, i) => (
+                            <div key={i} className="grid grid-cols-5 gap-2 px-3 py-2 text-sm border-t border-[var(--border)]">
+                              <span className="col-span-2 text-[var(--text-primary)] truncate">{ing.name}</span>
+                              <span className="text-right text-gray-500">{ing.quantity_g}g</span>
+                              <span className="text-right text-yellow-500">{Math.round(ing.calories_per_100g * ing.quantity_g / 100)}</span>
+                              <span className="text-right text-gray-500 text-xs">
+                                {Math.round(ing.protein_per_100g * ing.quantity_g / 100)}·{Math.round(ing.carbs_per_100g * ing.quantity_g / 100)}·{Math.round(ing.fat_per_100g * ing.quantity_g / 100)}
+                              </span>
+                            </div>
+                          ))}
+                          <div className="grid grid-cols-5 gap-2 px-3 py-2 border-t border-[var(--border)] bg-[var(--bg-input)] text-xs font-medium">
+                            <span className="col-span-2 text-gray-400">Total</span>
+                            <span className="text-right text-gray-400">{r.ingredients.reduce((s, i) => s + i.quantity_g, 0)}g</span>
+                            <span className="text-right text-yellow-500">{Math.round(r.ingredients.reduce((s, i) => s + i.calories_per_100g * i.quantity_g / 100, 0))}</span>
+                            <span className="text-right text-gray-400">
+                              {Math.round(r.ingredients.reduce((s, i) => s + i.protein_per_100g * i.quantity_g / 100, 0))}·{Math.round(r.ingredients.reduce((s, i) => s + i.carbs_per_100g * i.quantity_g / 100, 0))}·{Math.round(r.ingredients.reduce((s, i) => s + i.fat_per_100g * i.quantity_g / 100, 0))}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
                     <div className="flex gap-2">
