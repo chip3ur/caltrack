@@ -9,14 +9,17 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [email, setEmail] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.push('/login')
-      else setEmail(session.user.email ?? '')
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { router.push('/login'); return }
+      setEmail(session.user.email ?? '')
+      const { data } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
+      if (data?.is_admin) setIsAdmin(true)
     })
   }, [])
 
@@ -37,6 +40,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     { href: '/dashboard/plans', label: 'Plans', icon: '≡' },
     { href: '/dashboard/challenges', label: 'Défis', icon: '◈' },
     { href: '/dashboard/profile', label: 'Profil', icon: '◉' },
+    ...(isAdmin ? [{ href: '/dashboard/admin', label: 'Admin', icon: '🛡️' }] : []),
   ]
 
   async function handleLogout() {
