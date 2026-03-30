@@ -10,6 +10,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [email, setEmail] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [role, setRole] = useState<string>('athlete')
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -18,8 +19,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.push('/login'); return }
       setEmail(session.user.email ?? '')
-      const { data } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
+      const { data } = await supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).single()
       if (data?.is_admin) setIsAdmin(true)
+      if (data?.role) setRole(data.role)
     })
   }, [])
 
@@ -31,6 +33,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '⌂' },
+    ...(role === 'coach' ? [
+      { href: '/dashboard/coach', label: 'Mes élèves', icon: '👥' },
+      { href: '/dashboard/coach/programs', label: 'Programmes', icon: '📋' },
+    ] : [
+      { href: '/dashboard/athlete', label: 'Mon programme', icon: '🏋️' },
+    ]),
     { href: '/dashboard/add', label: 'Ajouter', icon: '+' },
     { href: '/dashboard/scan', label: 'Scanner', icon: '▦' },
     { href: '/dashboard/history', label: 'Historique', icon: '↺' },

@@ -15,6 +15,7 @@ type Profile = {
   daily_calories: number
   water_goal_ml: number
   notif_noon: boolean
+  role: string
 }
 
 export default function ProfilePage() {
@@ -126,6 +127,23 @@ export default function ProfilePage() {
           <div className="mb-3">
             <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Prénom</label>
             <input value={form.full_name} onChange={e => update('full_name', e.target.value)} className={inputClass}/>
+          </div>
+
+          <div className="mb-3">
+            <label className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Rôle</label>
+            <div className="flex gap-2">
+              {[{ value: 'athlete', label: '🎯 Athlète' }, { value: 'coach', label: '🏋️ Coach' }].map(opt => (
+                <button key={opt.value} type="button"
+                  onClick={() => update('role', opt.value)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm border transition-colors ${
+                    form.role === opt.value
+                      ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
+                      : 'border-[var(--border)] text-gray-400 hover:border-blue-500/30'
+                  }`}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex gap-3 mb-3">
