@@ -300,7 +300,7 @@ export default function AthletePage() {
 
         {/* ── TAB PROGRAMME COACH ── */}
         {tab === 'programme' && (
-        <>{/* Pas de programme → rejoindre un coach */}
+          <div className="space-y-6">
         {!assignment && (
           <div className="p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] space-y-4">
             <div className="text-center">
@@ -477,7 +477,9 @@ export default function AthletePage() {
               </div>
             )}
           </>
-        </>}
+        )}
+          </div>
+        )}
       </div>
     </div>
   )
