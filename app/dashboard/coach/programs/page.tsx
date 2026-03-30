@@ -45,9 +45,10 @@ export default function ProgramsPage() {
 
   async function createProgram(e: React.FormEvent) {
     e.preventDefault()
-    if (!newName.trim()) return
+    if (!newName.trim() || creating) return
+    setCreating(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
+    if (!session) { setCreating(false); return }
 
     const { data, error } = await supabase.from('programs').insert({
       coach_id: session.user.id,
@@ -56,6 +57,7 @@ export default function ProgramsPage() {
       is_template: isTemplate,
     }).select().single()
 
+    setCreating(false)
     if (!error && data) {
       router.push(`/dashboard/coach/programs/${data.id}`)
     }

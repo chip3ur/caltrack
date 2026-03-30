@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ReferenceLine
@@ -41,7 +42,6 @@ export function ProgressionChart({ data, metric = 'weight', exerciseName }: Prog
   const [activeMetric, setActiveMetric] = useState(metric)
   const { key, label, color } = METRICS[activeMetric]
 
-  const maxVal = Math.max(...data.map(d => (d as any)[key] ?? 0))
   const allTimePR = data.reduce((best, d) => {
     const v = (d as any)[key] ?? 0
     return v > best.value ? { value: v, date: d.session_date } : best
@@ -120,5 +120,3 @@ export function ProgressionChart({ data, metric = 'weight', exerciseName }: Prog
   )
 }
 
-// Import manquant
-import { useState } from 'react'

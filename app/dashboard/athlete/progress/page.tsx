@@ -40,6 +40,9 @@ export default function AthleteProgressPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
 
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+    if (profile?.role === 'coach') { router.push('/dashboard/coach'); return }
+
     const [{ data: prsData }, { data: exosData }] = await Promise.all([
       supabase.rpc('get_exercise_prs', { p_athlete_id: session.user.id }),
       supabase.from('exercises').select('id, name').eq('is_public', true).order('name'),

@@ -50,6 +50,7 @@ export default function ProgramDetailPage() {
   const [searchExercise, setSearchExercise] = useState('')
   const [assigning, setAssigning] = useState(false)
   const [selectedAthlete, setSelectedAthlete] = useState('')
+  const [assignSuccess, setAssignSuccess] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [id])
 
@@ -112,7 +113,8 @@ export default function ProgramDetailPage() {
     })
     setAssigning(false)
     setSelectedAthlete('')
-    alert('Programme assigné avec succès !')
+    setAssignSuccess(athletes.find(a => a.id === selectedAthlete)?.full_name ?? 'L\'élève')
+    setTimeout(() => setAssignSuccess(null), 3000)
   }
 
   const dayExercises = exercises.filter(e => e.day_number === selectedDay)
@@ -142,6 +144,12 @@ export default function ProgramDetailPage() {
             Assigner à un élève
           </button>
         </div>
+
+        {assignSuccess && (
+          <div className="p-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-300 text-sm text-center">
+            ✓ Programme assigné à {assignSuccess}
+          </div>
+        )}
 
         {/* Assigner */}
         {assigning && (

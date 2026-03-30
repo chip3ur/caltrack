@@ -43,7 +43,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     { href: '/dashboard/add', label: 'Ajouter', icon: '+' },
     { href: '/dashboard/scan', label: 'Scanner', icon: '▦' },
     { href: '/dashboard/history', label: 'Historique', icon: '↺' },
-    { href: '/dashboard/progress', label: 'Progression', icon: '↗' },
+    { href: '/dashboard/progress', label: 'Stats nutri', icon: '↗' },
     { href: '/dashboard/week', label: 'Semaine', icon: '◫' },
     { href: '/dashboard/recipes', label: 'Recettes', icon: '◧' },
     { href: '/dashboard/plans', label: 'Plans', icon: '≡' },

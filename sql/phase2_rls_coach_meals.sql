@@ -1,11 +1,21 @@
 -- ============================================================
--- CalTrack — Phase 2 : Accès coach aux repas de ses élèves
+-- CalTrack — Phase 2 : Accès coach aux données de ses élèves
 -- À exécuter dans Supabase Dashboard > SQL Editor
 -- ============================================================
 
 -- Permettre au coach de lire les repas de ses élèves
 DROP POLICY IF EXISTS "Coach reads athlete meals" ON meals;
 CREATE POLICY "Coach reads athlete meals" ON meals
+  FOR SELECT USING (
+    user_id IN (
+      SELECT athlete_id FROM coach_athletes
+      WHERE coach_id = auth.uid() AND active = true
+    )
+  );
+
+-- Permettre au coach de lire les pesées de ses élèves
+DROP POLICY IF EXISTS "Coach reads athlete weight logs" ON weight_logs;
+CREATE POLICY "Coach reads athlete weight logs" ON weight_logs
   FOR SELECT USING (
     user_id IN (
       SELECT athlete_id FROM coach_athletes
