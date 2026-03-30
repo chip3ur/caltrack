@@ -43,10 +43,11 @@ interface Meal {
   calories: number
   meal_type: string
   quantity_g: number
+  eaten_at: string
   protein_g: number
   carbs_g: number
   fat_g: number
-  eaten_at: string
+  foods?: { protein_per_100g: number; carbs_per_100g: number; fat_per_100g: number } | null
 }
 
 interface WeightLog {
@@ -123,7 +124,7 @@ export default function CoachAthleteView() {
         .limit(30),
       supabase.rpc('get_exercise_prs', { p_athlete_id: id }),
       supabase.from('meals')
-        .select('id, food_name, calories, meal_type, quantity_g, protein_g, carbs_g, fat_g, eaten_at')
+        .select('id, food_name, calories, meal_type, quantity_g, eaten_at, foods(protein_per_100g, carbs_per_100g, fat_per_100g)')
         .eq('user_id', id)
         .order('eaten_at', { ascending: false })
         .limit(300),
@@ -159,24 +160,31 @@ export default function CoachAthleteView() {
     }
 
     if (mealsErr) {
-      setMealsError('Accès aux repas refusé — exécutez sql/phase2_rls_coach_meals.sql dans Supabase.')
+      setMealsError(`Erreur : ${mealsErr.message}`)
     } else {
-      const allMeals = mealsData ?? []
+      // Calculer les macros depuis le JOIN foods
+      const allMeals: Meal[] = (mealsData ?? []).map((m: any) => {
+        const f = Array.isArray(m.foods) ? m.foods[0] : m.foods
+        const protein_g = f ? Math.round(f.protein_per_100g * m.quantity_g / 100) : 0
+        const carbs_g = f ? Math.round(f.carbs_per_100g * m.quantity_g / 100) : 0
+        const fat_g = f ? Math.round(f.fat_per_100g * m.quantity_g / 100) : 0
+        return { id: m.id, food_name: m.food_name, calories: m.calories, meal_type: m.meal_type, quantity_g: m.quantity_g, eaten_at: m.eaten_at, protein_g, carbs_g, fat_g }
+      })
       setMeals(allMeals)
 
       // Calcul bilan 7 jours
+      const goalVal = profile.daily_calories ?? 2000
       const days: DayStat[] = []
       for (let i = 6; i >= 0; i--) {
         const d = new Date()
         d.setDate(d.getDate() - i)
         const dateStr = d.toISOString().split('T')[0]
-        const dayMeals = allMeals.filter((m: Meal) => m.eaten_at.startsWith(dateStr))
-        const total = Math.round(dayMeals.reduce((s: number, m: Meal) => s + m.calories, 0))
-        const protein = Math.round(dayMeals.reduce((s: number, m: Meal) => s + (m.protein_g ?? 0), 0))
-        const carbs = Math.round(dayMeals.reduce((s: number, m: Meal) => s + (m.carbs_g ?? 0), 0))
-        const fat = Math.round(dayMeals.reduce((s: number, m: Meal) => s + (m.fat_g ?? 0), 0))
+        const dayMeals = allMeals.filter(m => m.eaten_at.startsWith(dateStr))
+        const total = Math.round(dayMeals.reduce((s, m) => s + m.calories, 0))
+        const protein = Math.round(dayMeals.reduce((s, m) => s + m.protein_g, 0))
+        const carbs = Math.round(dayMeals.reduce((s, m) => s + m.carbs_g, 0))
+        const fat = Math.round(dayMeals.reduce((s, m) => s + m.fat_g, 0))
         const lbl = i === 0 ? 'Auj.' : i === 1 ? 'Hier' : d.toLocaleDateString('fr-FR', { weekday: 'short' })
-        const goalVal = profile.daily_calories ?? 2000
         const color = total === 0 ? '#374151'
           : Math.abs(total - goalVal) <= goalVal * 0.1 ? '#22c55e'
           : total > goalVal * 1.1 ? '#ef4444'
