@@ -477,7 +477,7 @@ export default function AthletePage() {
               </div>
             )}
           </>
-        </>)}
+        </>}
       </div>
     </div>
   )
