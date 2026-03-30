@@ -5,9 +5,10 @@ import { supabase } from '@/lib/supabase'
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0) // 0 = choix rôle
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+  const [role, setRole] = useState<'athlete' | 'coach' | null>(null)
   const [form, setForm] = useState({
     full_name: '',
     age: '',
@@ -55,8 +56,18 @@ export default function OnboardingPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return router.push('/login')
 
-    const daily_calories = calculateCalories()
+    if (role === 'coach') {
+      const { error } = await supabase.from('profiles').upsert({
+        id: session.user.id,
+        full_name: form.full_name,
+        role: 'coach',
+      })
+      if (error) { console.error(error); setLoading(false); return }
+      router.push('/dashboard/coach')
+      return
+    }
 
+    const daily_calories = calculateCalories()
     const { error } = await supabase.from('profiles').upsert({
       id: session.user.id,
       full_name: form.full_name,
@@ -67,6 +78,7 @@ export default function OnboardingPage() {
       activity_level: form.activity_level,
       goal: form.goal,
       daily_calories,
+      role: 'athlete',
     })
 
     if (error) { console.error(error); setLoading(false); return }
@@ -80,13 +92,66 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-[#111118] border border-[#2E2E3E] rounded-2xl p-8">
 
-        <div className="flex gap-2 mb-6">
-          {[1, 2, 3].map(s => (
-            <div key={s} className={`h-1 rounded-full transition-all ${s === step ? 'flex-1 bg-blue-500' : s < step ? 'w-8 bg-blue-500/40' : 'w-8 bg-[#2E2E3E]'}`}/>
-          ))}
-        </div>
+        {/* Barre de progression — masquée à l'étape 0 */}
+        {step > 0 && (
+          <div className="flex gap-2 mb-6">
+            {(role === 'coach' ? [1] : [1, 2, 3]).map(s => (
+              <div key={s} className={`h-1 rounded-full transition-all ${s === step ? 'flex-1 bg-blue-500' : s < step ? 'w-8 bg-blue-500/40' : 'w-8 bg-[#2E2E3E]'}`}/>
+            ))}
+          </div>
+        )}
 
-        {step === 1 && (
+        {/* ÉTAPE 0 — Choix du rôle */}
+        {step === 0 && (
+          <div>
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-serif text-white mb-2">Bienvenue sur CalTrack</h1>
+              <p className="text-sm text-gray-500">Comment vas-tu utiliser l&apos;application ?</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => { setRole('athlete'); setStep(1) }}
+                className="flex flex-col items-center gap-4 p-6 rounded-2xl border border-[#2E2E3E] bg-[#1E1E28] hover:border-green-500/50 hover:bg-green-500/5 transition-all">
+                <span className="text-4xl">🎯</span>
+                <div className="text-center">
+                  <div className="font-semibold text-white mb-1">Athlète</div>
+                  <div className="text-xs text-gray-500">Je suis ma nutrition et mes entraînements</div>
+                </div>
+              </button>
+              <button
+                onClick={() => { setRole('coach'); setStep(1) }}
+                className="flex flex-col items-center gap-4 p-6 rounded-2xl border border-[#2E2E3E] bg-[#1E1E28] hover:border-blue-500/50 hover:bg-blue-500/5 transition-all">
+                <span className="text-4xl">🏋️‍♂️</span>
+                <div className="text-center">
+                  <div className="font-semibold text-white mb-1">Coach</div>
+                  <div className="text-xs text-gray-500">Je suis la progression de mes élèves</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 1 && role === 'coach' && (
+          <div>
+            <h2 className="text-xl font-serif text-white mb-1">Votre profil coach</h2>
+            <p className="text-sm text-gray-500 mb-6">Comment souhaitez-vous être identifié par vos élèves ?</p>
+            <input
+              placeholder="Votre prénom / nom"
+              value={form.full_name}
+              onChange={e => update('full_name', e.target.value)}
+              className={inputClass}
+            />
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setStep(0)} className="flex-1 border border-[#2E2E3E] text-gray-400 py-3 rounded-xl text-sm">← Retour</button>
+              <button onClick={handleSubmit} disabled={loading || !form.full_name.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 rounded-xl text-sm font-medium">
+                {loading ? 'Création...' : 'Créer mon compte coach →'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 1 && role === 'athlete' && (
           <div>
             <h2 className="text-xl font-serif text-white mb-1">Votre profil</h2>
             <p className="text-sm text-gray-500 mb-6">Quelques infos pour personnaliser votre expérience.</p>
@@ -98,49 +163,32 @@ export default function OnboardingPage() {
                 className={inputClass}
               />
               <div className="flex gap-3">
-                <input
-                  placeholder="Âge"
-                  type="number"
-                  value={form.age}
-                  onChange={e => update('age', e.target.value)}
-                  className={inputClass}
-                />
+                <input placeholder="Âge" type="number" value={form.age}
+                  onChange={e => update('age', e.target.value)} className={inputClass} />
                 <select value={form.sex} onChange={e => update('sex', e.target.value)} className={selectClass}>
                   <option value="homme">Homme</option>
                   <option value="femme">Femme</option>
                 </select>
               </div>
               <div className="flex gap-3">
-                <input
-                  placeholder="Taille (cm)"
-                  type="number"
-                  value={form.height_cm}
-                  onChange={e => update('height_cm', e.target.value)}
-                  className={inputClass}
-                />
-                <input
-                  placeholder="Poids (kg)"
-                  type="number"
-                  value={form.weight_kg}
-                  onChange={e => update('weight_kg', e.target.value)}
-                  className={inputClass}
-                />
+                <input placeholder="Taille (cm)" type="number" value={form.height_cm}
+                  onChange={e => update('height_cm', e.target.value)} className={inputClass} />
+                <input placeholder="Poids (kg)" type="number" value={form.weight_kg}
+                  onChange={e => update('weight_kg', e.target.value)} className={inputClass} />
               </div>
             </div>
-
             {errors.length > 0 && (
               <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                {errors.map(e => (
-                  <p key={e} className="text-xs text-red-400">{e}</p>
-                ))}
+                {errors.map(e => <p key={e} className="text-xs text-red-400">{e}</p>)}
               </div>
             )}
-
-            <button
-              onClick={() => { if (validateStep1()) setStep(2) }}
-              className="w-full mt-5 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-medium">
-              Continuer →
-            </button>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setStep(0)} className="flex-1 border border-[#2E2E3E] text-gray-400 py-3 rounded-xl text-sm">← Retour</button>
+              <button onClick={() => { if (validateStep1()) setStep(2) }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-medium">
+                Continuer →
+              </button>
+            </div>
           </div>
         )}
 
