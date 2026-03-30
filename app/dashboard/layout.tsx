@@ -38,6 +38,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       { href: '/dashboard/coach/programs', label: 'Programmes', icon: '📋' },
     ] : [
       { href: '/dashboard/athlete', label: 'Mon programme', icon: '🏋️' },
+      { href: '/dashboard/athlete/progress', label: 'Progression', icon: '📈' },
     ]),
     { href: '/dashboard/add', label: 'Ajouter', icon: '+' },
     { href: '/dashboard/scan', label: 'Scanner', icon: '▦' },
