@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { RestTimer } from '@/components/ui/rest-timer'
+import { TRAINING_TEMPLATES, type TrainingTemplate } from '@/lib/trainingTemplates'
 
 interface ProgramExercise {
   id: string
@@ -51,6 +52,9 @@ export default function AthletePage() {
   const [restTimer, setRestTimer] = useState<{ seconds: number } | null>(null)
   const [prevPrs, setPrevPrs] = useState<Record<string, number>>({})
   const [sessionStart, setSessionStart] = useState<Date | null>(null)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<TrainingTemplate | null>(null)
+  const [tab, setTab] = useState<'programme' | 'libre'>('programme')
 
   useEffect(() => { loadData() }, [])
 
@@ -219,13 +223,84 @@ export default function AthletePage() {
           <Link href="/dashboard/athlete/progress" className="text-xs text-blue-300 hover:underline">📈 Ma progression</Link>
         </div>
 
+        {/* Tabs programme assigné vs séance libre */}
+        <div className="flex gap-1 p-1 rounded-xl bg-[var(--bg-input)] border border-[var(--border)]">
+          <button onClick={() => setTab('programme')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'programme' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+            📋 Programme coach
+          </button>
+          <button onClick={() => setTab('libre')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'libre' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+            🏋️ Séance libre
+          </button>
+        </div>
+
         {saved && (
           <div className="p-4 rounded-xl border border-green-500/30 bg-green-500/10 text-green-300 text-sm font-medium text-center">
             ✓ Séance enregistrée !
           </div>
         )}
 
-        {/* Pas de programme → rejoindre un coach */}
+        {/* ── TAB SÉANCE LIBRE ── */}
+        {tab === 'libre' && (
+          <div className="space-y-4">
+            {!selectedTemplate ? (
+              <>
+                <p className="text-sm text-gray-400">Choisis un programme de base pour t&apos;entraîner sans coach :</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {TRAINING_TEMPLATES.map(tpl => (
+                    <button key={tpl.id} onClick={() => setSelectedTemplate(tpl)}
+                      className="p-5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-blue-500/30 hover:bg-blue-500/5 transition-all text-left">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="font-semibold text-[var(--text-primary)]">{tpl.name}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                          tpl.level === 'débutant' ? 'bg-green-500/10 text-green-300 border-green-500/20'
+                          : tpl.level === 'intermédiaire' ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                          : 'bg-red-500/10 text-red-300 border-red-500/20'
+                        }`}>{tpl.level}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-3">{tpl.description}</p>
+                      <p className="text-xs text-gray-600">{tpl.days.length} jours · {tpl.days.reduce((s, d) => s + d.exercises.length, 0)} exercices</p>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-[var(--text-primary)]">{selectedTemplate.name}</h2>
+                  <button onClick={() => setSelectedTemplate(null)} className="text-xs text-gray-500 hover:text-gray-300">← Changer</button>
+                </div>
+                {selectedTemplate.days.map(day => (
+                  <div key={day.day} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-input)]">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Jour {day.day} — {day.label}</span>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      {day.exercises.map((ex, i) => (
+                        <div key={i} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
+                          <div>
+                            <span className="text-sm font-medium text-[var(--text-primary)]">{ex.name}</span>
+                            {ex.notes && <p className="text-xs text-blue-300/60 italic mt-0.5">{ex.notes}</p>}
+                          </div>
+                          <div className="text-right text-xs text-gray-500">
+                            <div>{ex.sets} × {ex.reps}</div>
+                            {ex.rest_seconds > 0 && <div>⏱ {ex.rest_seconds}s</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500 text-center">Pour logger tes charges et suivre ta progression, rejoins un coach ou utilise l&apos;onglet Programme</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB PROGRAMME COACH ── */}
+        {tab === 'programme' && (
+        <>{/* Pas de programme → rejoindre un coach */}
         {!assignment && (
           <div className="p-6 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] space-y-4">
             <div className="text-center">
@@ -402,7 +477,7 @@ export default function AthletePage() {
               </div>
             )}
           </>
-        )}
+        </>)}
       </div>
     </div>
   )

@@ -30,9 +30,10 @@ export default function CoachDashboard() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
 
-    // Vérifier rôle coach
+    // Vérifier rôle coach — rediriger si athlète
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
-    if (profile?.role !== 'coach') { router.push('/dashboard/onboarding'); return }
+    if (!profile?.role) { router.push('/dashboard/onboarding'); return }
+    if (profile.role !== 'coach') { router.push('/dashboard/athlete'); return }
 
     // Charger les élèves via SECURITY DEFINER
     const { data } = await supabase.rpc('get_coach_athletes')
