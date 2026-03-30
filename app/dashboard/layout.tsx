@@ -36,6 +36,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     ...(role === 'coach' ? [
       { href: '/dashboard/coach', label: 'Mes élèves', icon: '👥' },
       { href: '/dashboard/coach/programs', label: 'Programmes', icon: '📋' },
+      { href: '/dashboard/athlete', label: 'Mon sport', icon: '💪' },
+      { href: '/dashboard/athlete/progress', label: 'Ma progression', icon: '📈' },
     ] : [
       { href: '/dashboard/athlete', label: 'Mon programme', icon: '🏋️' },
       { href: '/dashboard/athlete/progress', label: 'Progression sport', icon: '📈' },
